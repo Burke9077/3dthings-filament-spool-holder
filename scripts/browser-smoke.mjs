@@ -126,6 +126,21 @@ try {
     fitLabel: document.querySelector('label[for="fit-preset"]')?.textContent,
     fitHelp: document.querySelector("#fit-preset-summary")?.parentElement?.textContent,
     previewButtonCount: document.querySelectorAll("#preview-button").length,
+    previewHeaderChildCount:
+      document.querySelector(".viewer-panel .panel-heading")?.children.length,
+    completeButtonText:
+      document.querySelector("#download-pack-button")?.textContent,
+    completeDescription:
+      document.querySelector("#complete-pack-description")?.textContent,
+    otherDownloadsOpen: document.querySelector("#other-downloads")?.open,
+    singlePartButtonText:
+      document.querySelector("#download-part-button")?.textContent,
+    fitTestLabel: document.querySelector(
+      '#part-select option[value="nut_fit_test"]',
+    )?.textContent,
+    lastBomBorder: getComputedStyle(
+      document.querySelector("#bom-body tr:last-child td"),
+    ).borderBottomWidth,
   }));
   if (
     pageContent.bundleCount !== 4 ||
@@ -133,7 +148,14 @@ try {
     !pageContent.guideText?.includes("Capture the four M3 nuts") ||
     !pageContent.fitLabel?.includes("Part-fit clearance") ||
     !pageContent.fitHelp?.includes("rail sockets") ||
-    pageContent.previewButtonCount !== 0
+    pageContent.previewButtonCount !== 0 ||
+    pageContent.previewHeaderChildCount !== 1 ||
+    !pageContent.completeButtonText?.includes("Download all parts") ||
+    !pageContent.completeDescription?.includes("exact print quantities") ||
+    pageContent.otherDownloadsOpen !== false ||
+    !pageContent.singlePartButtonText?.includes("selected .stl") ||
+    pageContent.fitTestLabel !== "Nut-fit test" ||
+    pageContent.lastBomBorder !== "0px"
   ) {
     throw new Error(`Page UX is incomplete: ${JSON.stringify(pageContent)}`);
   }
@@ -163,12 +185,17 @@ try {
       window.__spoolCustomizer.getPreviewState()?.holderCount === 3,
     { timeout: previewTimeoutMs },
   );
-  const threeHolderDescription = await page.$eval(
-    "#link-kit-description",
-    (element) => element.textContent,
-  );
-  if (!threeHolderDescription.includes("4 clips for 3 holders")) {
-    throw new Error(`Bundle quantity did not update: ${threeHolderDescription}`);
+  const threeHolderDownloads = await page.evaluate(() => ({
+    links: document.querySelector("#link-kit-description")?.textContent,
+    complete: document.querySelector("#complete-pack-description")?.textContent,
+  }));
+  if (
+    !threeHolderDownloads.links?.includes("4 clips for 3 holders") ||
+    !threeHolderDownloads.complete?.includes("3 holders")
+  ) {
+    throw new Error(
+      `Download quantities did not update: ${JSON.stringify(threeHolderDownloads)}`,
+    );
   }
   await page.evaluate(() => {
     document.querySelector('input[name="holderCount"][value="2"]').click();
@@ -192,6 +219,26 @@ try {
     path: "build/site-smoke.png",
     fullPage: true,
   });
+
+  await page.click("#other-downloads summary");
+  const otherDownloadsLayout = await page.evaluate(() => {
+    const details = document.querySelector("#other-downloads");
+    const panel = document.querySelector(".export-panel");
+    return {
+      open: details?.open,
+      overflowing: panel.scrollWidth > panel.clientWidth,
+    };
+  });
+  if (!otherDownloadsLayout.open || otherDownloadsLayout.overflowing) {
+    throw new Error(
+      `Other downloads layout is invalid: ${JSON.stringify(otherDownloadsLayout)}`,
+    );
+  }
+  await page.screenshot({
+    path: "build/site-other-downloads-smoke.png",
+    fullPage: true,
+  });
+  await page.click("#other-downloads summary");
 
   await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 });
   const hasHorizontalOverflow = await page.evaluate(

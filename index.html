@@ -143,7 +143,7 @@
             <p class="hint">
               This changes only the rail sockets, nut pocket, screw bore, axle
               caps, and link clips. It does not change layer height, speed,
-              infill, or strength. Print the fit coupon first; choose extra
+              infill, or strength. Print the nut-fit test first; choose extra
               clearance if parts bind, or reduced clearance if they wobble.
             </p>
           </div>
@@ -211,10 +211,6 @@
               <p class="step">02</p>
               <h2>Live 3D preview</h2>
             </div>
-            <span class="auto-preview-label">
-              <span aria-hidden="true"></span>
-              Auto-updates
-            </span>
           </div>
 
           <div
@@ -255,72 +251,92 @@
       <section class="export-section">
         <div class="export-copy">
           <p class="step">03</p>
-          <h2>Generate printable files</h2>
+          <h2>Download your print files</h2>
           <p>
-            OpenSCAD runs in a local WebAssembly worker. The first render loads
-            about 11 MB; dimensions and generated geometry stay in your browser.
+            The complete pack contains every customized STL and its exact print
+            quantity. Everything is generated locally in your browser.
           </p>
         </div>
 
         <div class="panel export-panel">
-          <label for="part-select">Single part</label>
-          <div class="export-row">
-            <select id="part-select">
-              <option value="side_frame">Side frame</option>
-              <option value="crossbar">Crossrail</option>
-              <option value="axle">Axle</option>
-              <option value="axle_cap">Axle cap</option>
-              <option value="link_clip">Modular link clip</option>
-              <option value="nut_fit_test">Nut-fit coupon</option>
-            </select>
-            <button id="download-part-button" class="primary-button" type="button">
-              Generate STL
-            </button>
-          </div>
-          <div class="bundle-heading">
-            <span>Print groups</span>
-            <small>Each ZIP includes unique STLs and exact print quantities.</small>
-          </div>
-          <div class="bundle-grid">
-            <button
-              class="bundle-button"
-              type="button"
-              data-bundle="fit_check"
-            >
-              <span>Fit check</span>
-              <small>Coupon + one M3 hardware set</small>
-              <strong>Generate ZIP</strong>
-            </button>
-            <button
-              class="bundle-button"
-              type="button"
-              data-bundle="holder_module"
-            >
-              <span>One holder</span>
-              <small>Frame, rails, axle, and caps</small>
-              <strong>Generate ZIP</strong>
-            </button>
-            <button
-              id="link-kit-button"
-              class="bundle-button"
-              type="button"
-              data-bundle="link_kit"
-            >
-              <span>Link kit</span>
-              <small id="link-kit-description">2 clips for 2 holders</small>
-              <strong>Generate ZIP</strong>
-            </button>
+          <div class="complete-pack">
+            <div>
+              <p class="download-label">Complete print pack</p>
+              <h3 id="complete-pack-title">Two linked holders</h3>
+              <p id="complete-pack-description">
+                One ZIP with every customized STL and exact print quantities
+                for 2 holders.
+              </p>
+            </div>
             <button
               id="download-pack-button"
-              class="bundle-button bundle-button-primary"
+              class="primary-button complete-download-button"
               type="button"
               data-bundle="complete"
             >
-              <span>Complete setup</span>
-              <small id="complete-pack-description">All parts for 2 holders</small>
-              <strong>Generate ZIP</strong>
+              Download all parts
             </button>
           </div>
+
+          <details id="other-downloads" class="other-downloads">
+            <summary>Other downloads</summary>
+            <p class="other-downloads-intro">
+              Smaller packs for calibration, replacement, or adding to an
+              existing setup.
+            </p>
+            <div class="bundle-grid">
+              <button
+                class="bundle-button"
+                type="button"
+                data-bundle="fit_check"
+              >
+                <span>Fit test</span>
+                <small>Nut-fit test + one M3 hardware set</small>
+                <strong>Download .zip</strong>
+              </button>
+              <button
+                class="bundle-button"
+                type="button"
+                data-bundle="holder_module"
+              >
+                <span>One holder module</span>
+                <small>Frames, rails, axle, and caps</small>
+                <strong>Download .zip</strong>
+              </button>
+              <button
+                id="link-kit-button"
+                class="bundle-button"
+                type="button"
+                data-bundle="link_kit"
+              >
+                <span>Link clips</span>
+                <small id="link-kit-description">2 clips for 2 holders</small>
+                <strong>Download .zip</strong>
+              </button>
+            </div>
+
+            <div class="single-part-download">
+              <label for="part-select">Individual replacement part</label>
+              <div class="export-row">
+                <select id="part-select">
+                  <option value="side_frame">Side frame</option>
+                  <option value="crossbar">Crossrail</option>
+                  <option value="axle">Axle</option>
+                  <option value="axle_cap">Axle cap</option>
+                  <option value="link_clip">Modular link clip</option>
+                  <option value="nut_fit_test">Nut-fit test</option>
+                </select>
+                <button
+                  id="download-part-button"
+                  class="secondary-button"
+                  type="button"
+                >
+                  Download selected .stl
+                </button>
+              </div>
+            </div>
+          </details>
+
           <button id="cancel-button" class="text-button hidden" type="button">
             Cancel generation
           </button>
@@ -338,7 +354,7 @@
           <p class="eyebrow">Your print list</p>
           <h2 id="summary-title">Two linked holders</h2>
           <p>
-            Print the nut-fit coupon first. Once its nut and screw fit are
+            Print the nut-fit test first. Once its nut and screw fit are
             right, use the same settings for the structural parts.
           </p>
           <button id="copy-link-button" class="secondary-button" type="button">
@@ -362,9 +378,9 @@
             <h2>Print, assemble, and link</h2>
           </div>
           <p>
-            The groups follow the safest print order without assuming a slicer
-            or build-plate layout. Import each STL once, then set its copy count
-            from the included manifest or the print list above.
+            The complete pack includes each STL once with its copy count in the
+            filename and manifest. Import each STL, then set that quantity in
+            your slicer.
           </p>
         </header>
 
@@ -373,15 +389,15 @@
             <p class="guide-number">A · Calibrate</p>
             <h3>Prove the hardware fit</h3>
             <ol>
-              <li>Generate the <strong>Fit check</strong> group.</li>
-              <li>Print the coupon with the final material and profile.</li>
+              <li>Download the <strong>complete print pack</strong>.</li>
+              <li>Print its nut-fit test with the final material and profile.</li>
               <li>
                 Confirm an M3 nut drops into the hex pocket without turning and
                 an M3 screw passes through the bore.
               </li>
               <li>
                 If needed, choose a different fit preset or tune the advanced
-                nut and bore clearances before generating the other groups.
+                nut and bore clearances before downloading the pack again.
               </li>
             </ol>
           </article>

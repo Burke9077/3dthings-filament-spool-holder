@@ -35,6 +35,7 @@ const copyLinkButton = document.querySelector("#copy-link-button");
 const bomBody = document.querySelector("#bom-body");
 const summaryTitle = document.querySelector("#summary-title");
 const linkKitDescription = document.querySelector("#link-kit-description");
+const completePackTitle = document.querySelector("#complete-pack-title");
 const completePackDescription = document.querySelector(
   "#complete-pack-description",
 );
@@ -188,13 +189,14 @@ function render() {
     "Four linked holders",
   ];
   summaryTitle.textContent = titleWords[state.holderCount];
+  completePackTitle.textContent = titleWords[state.holderCount];
   const linkCount = 2 * Math.max(0, state.holderCount - 1);
   linkKitDescription.textContent =
     state.holderCount === 1
       ? "Add another holder to enable"
       : `${linkCount} clips for ${state.holderCount} holders`;
   completePackDescription.textContent =
-    `All parts for ${state.holderCount} holder${state.holderCount === 1 ? "" : "s"}`;
+    `One ZIP with every customized STL and exact print quantities for ${state.holderCount} holder${state.holderCount === 1 ? "" : "s"}.`;
   fitPresetSummary.textContent =
     fitPresetSummaries[state.fitPreset] ?? fitPresetSummaries.standard;
 
@@ -206,8 +208,8 @@ function render() {
   linkKitButton.setAttribute(
     "aria-label",
     state.holderCount === 1
-      ? "Link kit unavailable for one holder"
-      : `Generate ${linkCount}-clip link-kit ZIP`,
+      ? "Link clips unavailable for one holder"
+      : `Download ${linkCount} link clips as a ZIP`,
   );
 
   const linkOption = partSelect.querySelector('option[value="link_clip"]');
@@ -399,8 +401,9 @@ function saveBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-function partFilename(part) {
-  return `spool-holder-${state.spoolDiameter}d-${state.insideWidth}w-${part.replaceAll("_", "-")}.stl`;
+function partFilename(part, quantity) {
+  const quantitySuffix = quantity ? `-print-${quantity}` : "";
+  return `spool-holder-${state.spoolDiameter}d-${state.insideWidth}w-${part.replaceAll("_", "-")}${quantitySuffix}.stl`;
 }
 
 async function showInViewer(buffer) {
@@ -497,7 +500,7 @@ async function downloadPart() {
       new Blob([buffer], { type: "model/stl" }),
       partFilename(part),
     );
-    statusElement.textContent = "STL generated and downloaded.";
+    statusElement.textContent = "STL downloaded.";
   } catch (error) {
     if (!cancelled) {
       statusElement.textContent = `Generation failed: ${error.message}`;
@@ -532,7 +535,7 @@ Holder height:          ${dimensions.holderHeight.toFixed(2)} mm
 Axle length:            ${dimensions.axleLength.toFixed(2)} mm
 Linked frame gap:       ${dimensions.linkGap} mm
 
-Print the nut-fit coupon before the structural parts.
+Print the nut-fit test before the structural parts.
 Recommended starting point: 0.20 mm layers, 4 perimeters, 25% infill,
 and no supports.
 `;
@@ -551,7 +554,7 @@ async function downloadBundle(groupId) {
   ];
 
   if (partIds.length === 0) {
-    statusElement.textContent = "This configuration does not need a link kit.";
+    statusElement.textContent = "This configuration does not need link clips.";
     return;
   }
 
@@ -571,7 +574,9 @@ async function downloadBundle(groupId) {
         `Generating ${index + 1} of ${partIds.length}: ${part.replaceAll("_", " ")}…`,
         { renderState, operation: "export" },
       );
-      zip.file(partFilename(part), buffer);
+      const quantity =
+        group.items.find((item) => item.id === part)?.quantity ?? 1;
+      zip.file(partFilename(part, quantity), buffer);
     }
 
     zip.file("PRINT-ME.txt", printPackManifest(group));
@@ -608,7 +613,7 @@ async function downloadBundle(groupId) {
       ].join("-") + ".zip",
     );
     setProgress(1);
-    statusElement.textContent = `${group.label} print group downloaded.`;
+    statusElement.textContent = `${group.label} downloaded.`;
   } catch (error) {
     if (!cancelled) {
       statusElement.textContent = `Generation failed: ${error.message}`;
