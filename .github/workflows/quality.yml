@@ -1,0 +1,43 @@
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install web dependencies
+        run: npm ci
+
+      - name: Test customizer logic
+        run: npm test
+
+      - name: Build GitHub Pages site
+        run: npm run build
+
+      - name: Generate an STL in a headless browser
+        run: npm run test:browser
+
+      - name: Install OpenSCAD
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends openscad
+
+      - name: Render printable parts
+        run: make check

@@ -1,0 +1,26 @@
+{
+  "name": "3dthings-filament-spool-holder",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "./scripts/fetch-openscad-wasm.sh",
+    "dev": "vite",
+    "prebuild": "./scripts/fetch-openscad-wasm.sh",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "pretest:browser": "npm run build",
+    "test:browser": "node scripts/browser-smoke.mjs"
+  },
+  "dependencies": {
+    "jszip": "3.10.1",
+    "three": "0.185.1"
+  },
+  "devDependencies": {
+    "puppeteer-core": "24.32.1",
+    "vite": "6.4.3",
+    "vitest": "3.2.7"
+  }
+}
