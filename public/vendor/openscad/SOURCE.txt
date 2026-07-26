@@ -1,0 +1,12 @@
+OpenSCAD WebAssembly runtime
+============================
+
+Version: OpenSCAD 2026.07.24 WebAssembly web snapshot
+Archive: https://files.openscad.org/snapshots/OpenSCAD-2026.07.24-WebAssembly-web.zip
+SHA-256: 663a3259939ece4bfe28a6a7af2e8b5d87a102209fd28821a79c60257cbf45f0
+Source:  https://github.com/openscad/openscad
+Build:   https://github.com/openscad/openscad/blob/master/README.md#building-for-webassembly
+License: GNU General Public License version 2 or later (see COPYING)
+
+The runtime is downloaded and checksum-verified by
+scripts/fetch-openscad-wasm.sh during local and GitHub Pages builds.

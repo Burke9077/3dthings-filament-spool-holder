@@ -1,0 +1,10 @@
+/build/
+/dist/
+/node_modules/
+/public/vendor/openscad/.source-sha256
+/public/vendor/openscad/COPYING
+/public/vendor/openscad/openscad.js
+/public/vendor/openscad/openscad.wasm
+*.stl
+*.3mf
+*.gcode

@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Customize and generate an open-source parametric filament spool holder in your browser."
+    />
+    <meta name="theme-color" content="#11212d" />
+    <link rel="icon" href="data:," />
+    <title>Parametric filament spool holder</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="wordmark" href="./" aria-label="Spool holder customizer home">
+        <span class="wordmark-mark" aria-hidden="true"></span>
+        <span>Open spool holder</span>
+      </a>
+      <nav aria-label="Project links">
+        <a href="#customizer-form">Customize</a>
+        <a href="#print-guide">Print guide</a>
+        <a
+          href="https://github.com/Burke9077/3dthings-filament-spool-holder"
+          rel="noreferrer"
+        >Source on GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <p class="eyebrow">OpenSCAD · generated locally</p>
+          <h1>Fit the spool you have.</h1>
+          <p class="lede">
+            Set the spool envelope, choose how many independent holders you
+            need, and generate printable STLs without uploading a design or
+            measurement anywhere.
+          </p>
+        </div>
+        <dl class="hero-facts">
+          <div>
+            <dt>Hardware</dt>
+            <dd>4 × M3 per holder</dd>
+          </div>
+          <div>
+            <dt>Supports</dt>
+            <dd>None</dd>
+          </div>
+          <div>
+            <dt>License</dt>
+            <dd>MIT</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="workspace" aria-label="Spool holder customizer">
+        <form id="customizer-form" class="panel controls-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="step">01</p>
+              <h2>Size the holder</h2>
+            </div>
+            <button id="reset-button" class="text-button" type="button">
+              Reset
+            </button>
+          </div>
+
+          <div class="preset-row" aria-label="Size presets">
+            <button type="button" class="preset" data-preset="standard">
+              Standard 1 kg
+            </button>
+            <button type="button" class="preset" data-preset="wide">
+              Wide spool
+            </button>
+            <button type="button" class="preset" data-preset="large">
+              Large spool
+            </button>
+          </div>
+
+          <div class="control">
+            <div class="label-row">
+              <label for="spool-diameter">Maximum spool diameter</label>
+              <output id="spool-diameter-output" for="spool-diameter">
+                220 mm
+              </output>
+            </div>
+            <input
+              id="spool-diameter"
+              name="spoolDiameter"
+              data-param="spoolDiameter"
+              type="range"
+              min="120"
+              max="300"
+              step="1"
+              value="220"
+            />
+            <p class="hint">Frame height is derived from this measurement.</p>
+          </div>
+
+          <div class="control">
+            <div class="label-row">
+              <label for="inside-width">Clear width between frames</label>
+              <output id="inside-width-output" for="inside-width">
+                125 mm
+              </output>
+            </div>
+            <input
+              id="inside-width"
+              name="insideWidth"
+              data-param="insideWidth"
+              type="range"
+              min="40"
+              max="250"
+              step="1"
+              value="125"
+            />
+            <p class="hint">Measure the spool across both outside flanges.</p>
+          </div>
+
+          <fieldset class="control">
+            <legend>Independent holders</legend>
+            <div class="segmented" id="holder-count">
+              <label><input type="radio" name="holderCount" value="1" />1</label>
+              <label><input type="radio" name="holderCount" value="2" checked />2</label>
+              <label><input type="radio" name="holderCount" value="3" />3</label>
+              <label><input type="radio" name="holderCount" value="4" />4</label>
+            </div>
+            <p class="hint">Two clips join each adjacent pair.</p>
+          </fieldset>
+
+          <div class="control">
+            <label for="fit-preset">Printer fit</label>
+            <select id="fit-preset" name="fitPreset">
+              <option value="tight">Tight / calibrated</option>
+              <option value="standard" selected>Standard FDM</option>
+              <option value="loose">Loose / rough first layer</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+
+          <details class="advanced">
+            <summary>Advanced dimensions and fit</summary>
+            <div class="advanced-grid">
+              <label>
+                Print-bed side
+                <span><input name="printBed" type="number" min="120" max="500" step="1" /> mm</span>
+              </label>
+              <label class="checkbox-label">
+                <input name="autoBaseDepth" type="checkbox" checked />
+                Auto-size footprint depth
+              </label>
+              <label>
+                Footprint depth
+                <span><input name="baseDepth" type="number" min="100" max="300" step="1" /> mm</span>
+              </label>
+              <label>
+                Axle diameter
+                <span><input name="axleDiameter" type="number" min="10" max="30" step="0.5" /> mm</span>
+              </label>
+              <label>
+                M3 nut across flats
+                <span><input name="nutAcrossFlats" type="number" min="5.0" max="7.0" step="0.05" /> mm</span>
+              </label>
+              <label>
+                M3 nut thickness
+                <span><input name="nutThickness" type="number" min="1.8" max="3.5" step="0.05" /> mm</span>
+              </label>
+              <label>
+                Nut-pocket clearance
+                <span><input name="nutClearance" type="number" min="0.05" max="0.8" step="0.05" /> mm</span>
+              </label>
+              <label>
+                M3 screw bore
+                <span><input name="screwHoleDiameter" type="number" min="3.0" max="4.2" step="0.05" /> mm</span>
+              </label>
+              <label>
+                Rail socket clearance
+                <span><input name="railFitClearance" type="number" min="0.05" max="0.8" step="0.05" /> mm</span>
+              </label>
+              <label>
+                Axle-cap clearance
+                <span><input name="capFitClearance" type="number" min="0" max="0.8" step="0.05" /> mm</span>
+              </label>
+              <label>
+                Link-clip clearance
+                <span><input name="linkFitClearance" type="number" min="0" max="0.8" step="0.05" /> mm</span>
+              </label>
+              <label>
+                Gap between linked holders
+                <span><input name="linkGap" type="number" min="20" max="80" step="1" /> mm</span>
+              </label>
+            </div>
+          </details>
+
+          <div id="validation" class="validation" aria-live="polite"></div>
+        </form>
+
+        <section class="panel viewer-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="step">02</p>
+              <h2>Check the envelope</h2>
+            </div>
+            <button id="preview-button" class="secondary-button" type="button">
+              Build 3D preview
+            </button>
+          </div>
+
+          <div id="viewer" class="viewer" aria-label="3D model preview">
+            <img
+              id="viewer-placeholder"
+              src="./docs/linked-assembly.png"
+              alt="Rendered example of two linked filament spool holders"
+            />
+            <div class="viewer-note">Drag to orbit · scroll to zoom</div>
+          </div>
+
+          <dl class="dimension-strip">
+            <div>
+              <dt>Frame print</dt>
+              <dd id="frame-print-size">175 × 138 mm</dd>
+            </div>
+            <div>
+              <dt>Holder height</dt>
+              <dd id="holder-height">138 mm</dd>
+            </div>
+            <div>
+              <dt>Axle length</dt>
+              <dd id="axle-length">163 mm</dd>
+            </div>
+            <div>
+              <dt>Linked span</dt>
+              <dd id="linked-span">330 mm</dd>
+            </div>
+          </dl>
+        </section>
+      </section>
+
+      <section class="export-section">
+        <div class="export-copy">
+          <p class="step">03</p>
+          <h2>Generate printable files</h2>
+          <p>
+            OpenSCAD runs in a local WebAssembly worker. The first render loads
+            about 11 MB; dimensions and generated geometry stay in your browser.
+          </p>
+        </div>
+
+        <div class="panel export-panel">
+          <label for="part-select">Single part</label>
+          <div class="export-row">
+            <select id="part-select">
+              <option value="side_frame">Side frame</option>
+              <option value="crossbar">Crossrail</option>
+              <option value="axle">Axle</option>
+              <option value="axle_cap">Axle cap</option>
+              <option value="link_clip">Modular link clip</option>
+              <option value="nut_fit_test">Nut-fit coupon</option>
+            </select>
+            <button id="download-part-button" class="primary-button" type="button">
+              Generate STL
+            </button>
+          </div>
+          <div class="bundle-heading">
+            <span>Print groups</span>
+            <small>Each ZIP includes unique STLs and exact print quantities.</small>
+          </div>
+          <div class="bundle-grid">
+            <button
+              class="bundle-button"
+              type="button"
+              data-bundle="fit_check"
+            >
+              <span>Fit check</span>
+              <small>Coupon + one M3 hardware set</small>
+              <strong>Generate ZIP</strong>
+            </button>
+            <button
+              class="bundle-button"
+              type="button"
+              data-bundle="holder_module"
+            >
+              <span>One holder</span>
+              <small>Frame, rails, axle, and caps</small>
+              <strong>Generate ZIP</strong>
+            </button>
+            <button
+              id="link-kit-button"
+              class="bundle-button"
+              type="button"
+              data-bundle="link_kit"
+            >
+              <span>Link kit</span>
+              <small id="link-kit-description">2 clips for 2 holders</small>
+              <strong>Generate ZIP</strong>
+            </button>
+            <button
+              id="download-pack-button"
+              class="bundle-button bundle-button-primary"
+              type="button"
+              data-bundle="complete"
+            >
+              <span>Complete setup</span>
+              <small id="complete-pack-description">All parts for 2 holders</small>
+              <strong>Generate ZIP</strong>
+            </button>
+          </div>
+          <button id="cancel-button" class="text-button hidden" type="button">
+            Cancel generation
+          </button>
+          <div class="progress-track" aria-hidden="true">
+            <span id="progress-bar"></span>
+          </div>
+          <p id="generation-status" class="generation-status" aria-live="polite">
+            Ready.
+          </p>
+        </div>
+      </section>
+
+      <section class="summary-section">
+        <div>
+          <p class="eyebrow">Your print list</p>
+          <h2 id="summary-title">Two linked holders</h2>
+          <p>
+            Print the nut-fit coupon first. Once its nut and screw fit are
+            right, use the same settings for the structural parts.
+          </p>
+          <button id="copy-link-button" class="secondary-button" type="button">
+            Copy configuration link
+          </button>
+        </div>
+        <div class="bom-card">
+          <table>
+            <thead>
+              <tr><th>Part / hardware</th><th>Quantity</th></tr>
+            </thead>
+            <tbody id="bom-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="print-guide" class="guide-section">
+        <header class="guide-heading">
+          <div>
+            <p class="step">04</p>
+            <h2>Print, assemble, and link</h2>
+          </div>
+          <p>
+            The groups follow the safest print order without assuming a slicer
+            or build-plate layout. Import each STL once, then set its copy count
+            from the included manifest or the print list above.
+          </p>
+        </header>
+
+        <div class="guide-grid">
+          <article class="guide-card">
+            <p class="guide-number">A · Calibrate</p>
+            <h3>Prove the hardware fit</h3>
+            <ol>
+              <li>Generate the <strong>Fit check</strong> group.</li>
+              <li>Print the coupon with the final material and profile.</li>
+              <li>
+                Confirm an M3 nut drops into the hex pocket without turning and
+                an M3 screw passes through the bore.
+              </li>
+              <li>
+                If needed, choose a different fit preset or tune the advanced
+                nut and bore clearances before generating the other groups.
+              </li>
+            </ol>
+          </article>
+
+          <article class="guide-card">
+            <p class="guide-number">B · Print</p>
+            <h3>Use the designed orientations</h3>
+            <ul>
+              <li>0.20 mm layers, 4 walls, 4 top/bottom layers, 25% infill.</li>
+              <li>Side frames flat, with the shallow rail recesses upward.</li>
+              <li>Crossrails on the broad face, with nut openings upward.</li>
+              <li>Axle horizontal on its faceted flat; add a brim if needed.</li>
+              <li>Caps flange-down; clips flat. No supports are required.</li>
+            </ul>
+          </article>
+
+          <article class="guide-card">
+            <p class="guide-number">C · Assemble</p>
+            <h3>Capture the four M3 nuts</h3>
+            <ol>
+              <li>Place both crossrails with their nut openings upward.</li>
+              <li>Drop one M3 nut into each of the four hex pockets.</li>
+              <li>
+                Seat the rail tenons in one frame, then add the second frame
+                with both shallow recesses facing inward.
+              </li>
+              <li>
+                Install four M3 × 10 mm screws from the outside and tighten
+                evenly on a flat surface.
+              </li>
+              <li>Pass the axle through the spool, lower it into the cradles, and add both caps.</li>
+            </ol>
+          </article>
+
+          <article class="guide-card">
+            <p class="guide-number">D · Link</p>
+            <h3>Keep every spool independent</h3>
+            <ol>
+              <li>Build and test each holder as a complete module.</li>
+              <li>Set neighboring frames apart by the configured link gap.</li>
+              <li>
+                Press one clip over the two front frame edges and another over
+                the rear edges.
+              </li>
+              <li>Repeat the same two-clip connection for each added holder.</li>
+            </ol>
+            <p class="guide-note">
+              Each module keeps its own axle, so either spool can be changed
+              without disturbing its neighbor.
+            </p>
+          </article>
+        </div>
+
+        <aside class="hardware-callout">
+          <div>
+            <span>Hardware per holder</span>
+            <strong>4 × M3 nuts + 4 × M3 × 10 mm socket screws</strong>
+          </div>
+          <p>
+            PLA, PETG, and ASA all work. For unusually wide or heavy spools,
+            use a metal tube or rod sized to the customized cradle.
+          </p>
+        </aside>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        Original open-frame design. No affiliation with Iverntech.
+        <a href="https://github.com/Burke9077/3dthings-filament-spool-holder/blob/main/LICENSE">MIT licensed</a>.
+      </p>
+    </footer>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
