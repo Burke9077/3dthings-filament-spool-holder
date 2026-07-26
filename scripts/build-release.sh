@@ -31,7 +31,12 @@ fi
 rm -rf -- "$release_root"
 mkdir -p "$package_dir/models" "$package_dir/source" "$package_dir/images" "$assets_dir"
 
-make -C "$repo_root" check preview
+make_args=(-C "$repo_root" check preview)
+if [[ -z "${DISPLAY:-}" ]] && command -v xvfb-run >/dev/null 2>&1; then
+  xvfb-run -a make "${make_args[@]}"
+else
+  make "${make_args[@]}"
+fi
 
 if [[ "$source_state" == "clean" ]] \
   && [[ -n "$(git -C "$repo_root" status --porcelain --untracked-files=normal)" ]]; then
