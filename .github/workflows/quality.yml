@@ -37,7 +37,10 @@ jobs:
       - name: Install OpenSCAD
         run: |
           sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends openscad
+          sudo apt-get install --yes --no-install-recommends openscad zip
 
       - name: Render printable parts
         run: make check
+
+      - name: Build release candidate
+        run: ./scripts/build-release.sh unreleased

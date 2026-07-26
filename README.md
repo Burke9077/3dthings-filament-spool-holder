@@ -80,6 +80,20 @@ regenerate the documentation render:
 make preview
 ```
 
+## Release preparation
+
+Marketplace publication is held until a complete physical print has been
+assembled and approved. The manually triggered **Prepare release** workflow
+builds an inspectable release candidate by default; it cannot create a public
+GitHub Release without the physical-test confirmation.
+
+See [PUBLISHING.md](PUBLISHING.md) for the release gate, marketplace research,
+and first-publication checklist. Build the same candidate locally with:
+
+```sh
+make release
+```
+
 ## Calibrate before printing
 
 Print `build/nut_fit_test.stl` first:

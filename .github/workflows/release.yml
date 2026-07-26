@@ -1,0 +1,97 @@
+name: Prepare release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Use 'unreleased' for a rehearsal or a version such as v0.1.0"
+        required: true
+        default: unreleased
+        type: string
+      publish_release:
+        description: "Create a public GitHub Release after building the candidate"
+        required: true
+        default: false
+        type: boolean
+      confirmation:
+        description: "For publication only: enter PHYSICALLY_TESTED"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prepare-release-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Install OpenSCAD and ZIP
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends openscad zip
+
+      - name: Build release candidate
+        env:
+          VERSION: ${{ inputs.version }}
+        run: ./scripts/build-release.sh "$VERSION"
+
+      - name: Upload release candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: spool-holder-release-${{ inputs.version }}
+          path: build/release/assets
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    if: ${{ inputs.publish_release }}
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    environment: public-release
+    steps:
+      - name: Validate publication gate
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          VERSION: ${{ inputs.version }}
+          WORKFLOW_REF: ${{ github.ref }}
+        run: |
+          if [[ "$WORKFLOW_REF" != "refs/heads/main" ]]; then
+            echo "Public releases must run from main." >&2
+            exit 1
+          fi
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Public releases require a semantic version such as v0.1.0." >&2
+            exit 1
+          fi
+          if [[ "$CONFIRMATION" != "PHYSICALLY_TESTED" ]]; then
+            echo "Publication requires the exact PHYSICALLY_TESTED confirmation." >&2
+            exit 1
+          fi
+
+      - name: Download inspected assets
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: spool-holder-release-${{ inputs.version }}
+          path: release-assets
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          gh release create "$VERSION" release-assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Parametric filament spool holder $VERSION" \
+            --generate-notes
