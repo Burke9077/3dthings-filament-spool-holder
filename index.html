@@ -130,13 +130,22 @@
           </fieldset>
 
           <div class="control">
-            <label for="fit-preset">Printer fit</label>
+            <label for="fit-preset">Part-fit clearance</label>
             <select id="fit-preset" name="fitPreset">
-              <option value="tight">Tight / calibrated</option>
-              <option value="standard" selected>Standard FDM</option>
-              <option value="loose">Loose / rough first layer</option>
-              <option value="custom">Custom</option>
+              <option value="standard" selected>Standard (recommended)</option>
+              <option value="loose">Extra clearance — parts print tight</option>
+              <option value="tight">Reduced clearance — parts fit loose</option>
+              <option value="custom">Custom advanced values</option>
             </select>
+            <p id="fit-preset-summary" class="fit-summary" aria-live="polite">
+              Balanced mating clearances for most tuned FDM printers.
+            </p>
+            <p class="hint">
+              This changes only the rail sockets, nut pocket, screw bore, axle
+              caps, and link clips. It does not change layer height, speed,
+              infill, or strength. Print the fit coupon first; choose extra
+              clearance if parts bind, or reduced clearance if they wobble.
+            </p>
           </div>
 
           <details class="advanced">
@@ -200,19 +209,25 @@
           <div class="panel-heading">
             <div>
               <p class="step">02</p>
-              <h2>Check the envelope</h2>
+              <h2>Live 3D preview</h2>
             </div>
-            <button id="preview-button" class="secondary-button" type="button">
-              Build 3D preview
-            </button>
+            <span class="auto-preview-label">
+              <span aria-hidden="true"></span>
+              Auto-updates
+            </span>
           </div>
 
-          <div id="viewer" class="viewer" aria-label="3D model preview">
-            <img
-              id="viewer-placeholder"
-              src="./docs/linked-assembly.png"
-              alt="Rendered example of two linked filament spool holders"
-            />
+          <div
+            id="viewer"
+            class="viewer"
+            data-preview-state="loading"
+            aria-label="Automatically updating 3D model preview"
+            aria-busy="true"
+          >
+            <div id="preview-status" class="preview-status" role="status">
+              <span class="preview-status-dot" aria-hidden="true"></span>
+              <span id="preview-status-text">Preparing live preview…</span>
+            </div>
             <div class="viewer-note">Drag to orbit · scroll to zoom</div>
           </div>
 
@@ -425,17 +440,13 @@
             <span>Hardware per holder</span>
             <strong>4 × M3 nuts + 4 × M3 × 10 mm socket screws</strong>
           </div>
-          <p>
-            PLA, PETG, and ASA all work. For unusually wide or heavy spools,
-            use a metal tube or rod sized to the customized cradle.
-          </p>
         </aside>
       </section>
     </main>
 
     <footer>
       <p>
-        Original open-frame design. No affiliation with Iverntech.
+        Original open-frame design.
         <a href="https://github.com/Burke9077/3dthings-filament-spool-holder/blob/main/LICENSE">MIT licensed</a>.
       </p>
     </footer>

@@ -17,10 +17,9 @@ import "./styles.css";
 
 const form = document.querySelector("#customizer-form");
 const viewerElement = document.querySelector("#viewer");
-const viewerPlaceholder = document.querySelector("#viewer-placeholder");
+const previewStatusText = document.querySelector("#preview-status-text");
 const validationElement = document.querySelector("#validation");
 const partSelect = document.querySelector("#part-select");
-const previewButton = document.querySelector("#preview-button");
 const downloadPartButton = document.querySelector("#download-part-button");
 const bundleButtons = [
   ...document.querySelectorAll("[data-bundle]"),
@@ -30,6 +29,7 @@ const cancelButton = document.querySelector("#cancel-button");
 const statusElement = document.querySelector("#generation-status");
 const progressBar = document.querySelector("#progress-bar");
 const fitPresetSelect = document.querySelector("#fit-preset");
+const fitPresetSummary = document.querySelector("#fit-preset-summary");
 const resetButton = document.querySelector("#reset-button");
 const copyLinkButton = document.querySelector("#copy-link-button");
 const bomBody = document.querySelector("#bom-body");
@@ -49,14 +49,32 @@ const wasmUrl = new URL(
   baseUrl,
 ).href;
 
+const previewDebounceMilliseconds = 500;
+const fitPresetSummaries = Object.freeze({
+  standard: "Balanced mating clearances for most tuned FDM printers.",
+  loose:
+    "Extra clearance enlarges pockets, bores, and sockets when printed parts bind or press fits are too tight.",
+  tight:
+    "Reduced clearance tightens mating parts when joints, caps, or clips feel loose.",
+  custom:
+    "Custom uses the individual clearance values under Advanced dimensions and fit.",
+});
+
 let viewerPromise = null;
 let state = stateFromQuery(window.location.search);
 let activeWorker = null;
 let activeCancel = null;
+let activeOperation = null;
+let exportBusy = false;
+let hasValidationErrors = false;
+let previewTimer = null;
+let previewRequest = 0;
+let lastPreviewKey = null;
+let lastPreviewState = null;
 let generationId = 0;
 let cancelled = false;
 
-function setFormState(nextState) {
+function setFormState(nextState, { previewImmediately = false } = {}) {
   const normalized = normalizeState(nextState);
   const elements = form.elements;
 
@@ -76,6 +94,7 @@ function setFormState(nextState) {
 
   state = normalized;
   render();
+  schedulePreview({ immediate: previewImmediately });
 }
 
 function readFormState() {
@@ -176,18 +195,14 @@ function render() {
       : `${linkCount} clips for ${state.holderCount} holders`;
   completePackDescription.textContent =
     `All parts for ${state.holderCount} holder${state.holderCount === 1 ? "" : "s"}`;
+  fitPresetSummary.textContent =
+    fitPresetSummaries[state.fitPreset] ?? fitPresetSummaries.standard;
 
   renderValidation(errors, warnings);
   renderBom();
 
-  const disabled = errors.length > 0 || activeWorker !== null;
-  previewButton.disabled = disabled;
-  downloadPartButton.disabled = disabled;
-  for (const button of bundleButtons) {
-    button.disabled =
-      disabled ||
-      (button.dataset.bundle === "link_kit" && state.holderCount === 1);
-  }
+  hasValidationErrors = errors.length > 0;
+  syncActionState();
   linkKitButton.setAttribute(
     "aria-label",
     state.holderCount === 1
@@ -206,65 +221,160 @@ function render() {
   history.replaceState(null, "", url);
 }
 
-function setBusy(isBusy) {
-  cancelButton.classList.toggle("hidden", !isBusy);
-  previewButton.disabled = isBusy;
-  downloadPartButton.disabled = isBusy;
+function syncActionState() {
+  const isBusy = exportBusy || activeWorker !== null;
+  cancelButton.classList.toggle("hidden", !exportBusy);
+  downloadPartButton.disabled = hasValidationErrors || isBusy;
   for (const button of bundleButtons) {
-    button.disabled = isBusy;
+    button.disabled =
+      hasValidationErrors ||
+      isBusy ||
+      (button.dataset.bundle === "link_kit" && state.holderCount === 1);
   }
-  form.classList.toggle("is-busy", isBusy);
-  if (!isBusy) {
-    render();
-  }
+  form.inert = exportBusy;
+  form.classList.toggle("is-busy", exportBusy);
+  form.setAttribute("aria-busy", String(exportBusy));
+}
+
+function setExportBusy(isBusy) {
+  exportBusy = isBusy;
+  syncActionState();
 }
 
 function setProgress(fraction) {
   progressBar.style.width = `${Math.max(0, Math.min(1, fraction)) * 100}%`;
 }
 
-function runOpenScad(part, progressMessage) {
+function setPreviewStatus(previewState, message) {
+  viewerElement.dataset.previewState = previewState;
+  viewerElement.setAttribute(
+    "aria-busy",
+    String(previewState === "queued" || previewState === "loading"),
+  );
+  previewStatusText.textContent = message;
+}
+
+function previewSpecification(inputState) {
+  const part =
+    inputState.holderCount > 1 ? "linked_assembly" : "assembly";
+  const definitions = openScadDefinitions(inputState, part);
+  return {
+    part,
+    definitions,
+    key: JSON.stringify([part, definitions]),
+  };
+}
+
+function previewReadyMessage(inputState) {
+  return inputState.holderCount === 1
+    ? "Live preview · one holder"
+    : `Live preview · ${inputState.holderCount} linked holders`;
+}
+
+function schedulePreview({ immediate = false, force = false } = {}) {
+  clearTimeout(previewTimer);
+  const request = ++previewRequest;
+
+  if (activeOperation === "preview") {
+    activeCancel?.();
+  }
+
+  const { errors } = validateState(state);
+  if (errors.length > 0) {
+    setPreviewStatus(
+      "invalid",
+      "Fix the highlighted settings to update the preview.",
+    );
+    return;
+  }
+
+  const specification = previewSpecification(state);
+  if (
+    !force &&
+    lastPreviewKey === specification.key &&
+    viewerElement.classList.contains("has-model")
+  ) {
+    setPreviewStatus("ready", previewReadyMessage(state));
+    return;
+  }
+
+  setPreviewStatus(
+    "queued",
+    viewerElement.classList.contains("has-model")
+      ? "Changes detected · updating preview…"
+      : "Preparing live preview…",
+  );
+  previewTimer = setTimeout(
+    () => buildPreview(request),
+    immediate ? 0 : previewDebounceMilliseconds,
+  );
+}
+
+function runOpenScad(
+  part,
+  progressMessage,
+  {
+    renderState = state,
+    operation = "export",
+    definitions = openScadDefinitions(renderState, part),
+  } = {},
+) {
   return new Promise((resolve, reject) => {
+    if (activeWorker !== null) {
+      reject(new Error("OpenSCAD is already generating another model."));
+      return;
+    }
+
     const id = ++generationId;
     const worker = new Worker(
       new URL("./openscad.worker.js", import.meta.url),
       { type: "module" },
     );
     activeWorker = worker;
-    activeCancel = () => {
+    activeOperation = operation;
+    syncActionState();
+
+    const reportStatus = (message) => {
+      if (operation === "preview") {
+        setPreviewStatus("loading", message);
+      } else {
+        statusElement.textContent = message;
+      }
+    };
+    const cleanup = () => {
       worker.terminate();
       if (activeWorker === worker) {
         activeWorker = null;
+        activeCancel = null;
+        activeOperation = null;
+        syncActionState();
       }
-      activeCancel = null;
-      reject(new Error("Generation cancelled."));
     };
-    statusElement.textContent = progressMessage;
+
+    activeCancel = () => {
+      cleanup();
+      reject(new DOMException("Generation cancelled.", "AbortError"));
+    };
+    reportStatus(progressMessage);
 
     worker.addEventListener("message", (event) => {
       if (event.data.id !== id) {
         return;
       }
       if (event.data.type === "status") {
-        statusElement.textContent = event.data.message;
+        reportStatus(event.data.message);
       } else if (event.data.type === "result") {
-        worker.terminate();
-        activeWorker = null;
-        activeCancel = null;
+        cleanup();
         resolve(event.data.buffer);
       } else if (event.data.type === "error") {
-        worker.terminate();
-        activeWorker = null;
-        activeCancel = null;
+        cleanup();
         const details = event.data.stderr?.slice(-5).join(" ") ?? "";
         reject(new Error(`${event.data.message} ${details}`.trim()));
       }
     });
 
     worker.addEventListener("error", (event) => {
-      worker.terminate();
-      activeWorker = null;
-      activeCancel = null;
+      cleanup();
       reject(new Error(event.message || "OpenSCAD worker failed."));
     });
 
@@ -273,7 +383,7 @@ function runOpenScad(part, progressMessage) {
       moduleUrl,
       wasmUrl,
       source: scadSource,
-      definitions: openScadDefinitions(state, part),
+      definitions,
     });
   });
 }
@@ -299,56 +409,90 @@ async function showInViewer(buffer) {
   );
   const viewer = await viewerPromise;
   viewer.load(buffer);
-  viewerPlaceholder.classList.add("hidden");
+  viewerElement.classList.add("has-model");
 }
 
-async function buildPreview() {
-  const previewPart =
-    state.holderCount > 1 ? "linked_assembly" : "assembly";
-  cancelled = false;
-  setBusy(true);
-  setProgress(0.15);
+async function buildPreview(request) {
+  if (request !== previewRequest) {
+    return;
+  }
+
+  if (exportBusy || activeWorker !== null) {
+    previewTimer = setTimeout(() => buildPreview(request), 200);
+    return;
+  }
+
+  const renderState = { ...state };
+  const specification = previewSpecification(renderState);
+  setPreviewStatus(
+    "loading",
+    viewerElement.classList.contains("has-model")
+      ? "Updating configured model…"
+      : "Building configured model…",
+  );
 
   try {
     const buffer = await runOpenScad(
-      previewPart,
-      "Building the actual OpenSCAD assembly…",
+      specification.part,
+      "Loading OpenSCAD for the live preview…",
+      {
+        renderState,
+        operation: "preview",
+        definitions: specification.definitions,
+      },
     );
-    if (cancelled) {
+    if (request !== previewRequest) {
       return;
     }
-    setProgress(1);
     await showInViewer(buffer);
-    statusElement.textContent =
-      state.holderCount > 2
-        ? "Preview shows one linked pair; the same connector repeats for additional holders."
-        : "3D preview ready.";
-  } catch (error) {
-    if (!cancelled) {
-      statusElement.textContent = `Generation failed: ${error.message}`;
+    if (request !== previewRequest) {
+      return;
     }
-  } finally {
-    setBusy(false);
-    setTimeout(() => setProgress(0), 800);
+    lastPreviewKey = specification.key;
+    lastPreviewState = renderState;
+    setPreviewStatus("ready", previewReadyMessage(renderState));
+  } catch (error) {
+    if (request !== previewRequest || error.name === "AbortError") {
+      return;
+    }
+    setPreviewStatus("error", `Preview failed: ${error.message}`);
   }
+}
+
+function beginExport() {
+  clearTimeout(previewTimer);
+  previewRequest += 1;
+  if (activeOperation === "preview") {
+    activeCancel?.();
+  }
+  cancelled = false;
+  setExportBusy(true);
+}
+
+function finishExport() {
+  if (cancelled) {
+    statusElement.textContent = "Generation cancelled.";
+  }
+  setExportBusy(false);
+  schedulePreview({ immediate: true });
 }
 
 async function downloadPart() {
   const part = partSelect.value;
-  cancelled = false;
-  setBusy(true);
+  const renderState = { ...state };
+  beginExport();
   setProgress(0.15);
 
   try {
     const buffer = await runOpenScad(
       part,
       `Generating ${PARTS.find((item) => item.id === part)?.label ?? part}…`,
+      { renderState, operation: "export" },
     );
     if (cancelled) {
       return;
     }
     setProgress(1);
-    await showInViewer(buffer.slice(0));
     saveBlob(
       new Blob([buffer], { type: "model/stl" }),
       partFilename(part),
@@ -359,7 +503,7 @@ async function downloadPart() {
       statusElement.textContent = `Generation failed: ${error.message}`;
     }
   } finally {
-    setBusy(false);
+    finishExport();
     setTimeout(() => setProgress(0), 800);
   }
 }
@@ -395,6 +539,7 @@ and no supports.
 }
 
 async function downloadBundle(groupId) {
+  const renderState = { ...state };
   const group = printGroupFor(groupId, state.holderCount);
   const printablePartIds = new Set(PARTS.map(({ id }) => id));
   const partIds = [
@@ -410,8 +555,7 @@ async function downloadBundle(groupId) {
     return;
   }
 
-  cancelled = false;
-  setBusy(true);
+  beginExport();
 
   try {
     const { default: JSZip } = await import("jszip");
@@ -425,6 +569,7 @@ async function downloadBundle(groupId) {
       const buffer = await runOpenScad(
         part,
         `Generating ${index + 1} of ${partIds.length}: ${part.replaceAll("_", " ")}…`,
+        { renderState, operation: "export" },
       );
       zip.file(partFilename(part), buffer);
     }
@@ -449,6 +594,9 @@ async function downloadBundle(groupId) {
       compression: "DEFLATE",
       compressionOptions: { level: 6 },
     });
+    if (cancelled) {
+      return;
+    }
     saveBlob(
       blob,
       [
@@ -466,7 +614,7 @@ async function downloadBundle(groupId) {
       statusElement.textContent = `Generation failed: ${error.message}`;
     }
   } finally {
-    setBusy(false);
+    finishExport();
     setTimeout(() => setProgress(0), 800);
   }
 }
@@ -487,6 +635,7 @@ form.addEventListener("input", (event) => {
     fitPresetSelect.value = "custom";
   }
   render();
+  schedulePreview();
 });
 
 fitPresetSelect.addEventListener("change", () => {
@@ -502,7 +651,6 @@ document.querySelectorAll("[data-preset]").forEach((button) => {
 });
 
 resetButton.addEventListener("click", () => setFormState(DEFAULTS));
-previewButton.addEventListener("click", buildPreview);
 downloadPartButton.addEventListener("click", downloadPart);
 for (const button of bundleButtons) {
   button.addEventListener("click", () => downloadBundle(button.dataset.bundle));
@@ -510,9 +658,8 @@ for (const button of bundleButtons) {
 cancelButton.addEventListener("click", () => {
   cancelled = true;
   activeCancel?.();
-  statusElement.textContent = "Generation cancelled.";
+  statusElement.textContent = "Cancelling generation…";
   setProgress(0);
-  setBusy(false);
 });
 
 copyLinkButton.addEventListener("click", async () => {
@@ -527,12 +674,17 @@ copyLinkButton.addEventListener("click", async () => {
   }, 1600);
 });
 
-setFormState(state);
+setFormState(state, { previewImmediately: true });
 
 window.__spoolCustomizer = {
   getState: () => ({ ...state }),
+  getPreviewState: () =>
+    lastPreviewState ? { ...lastPreviewState } : null,
   async generateByteLength(part = "nut_fit_test") {
-    const buffer = await runOpenScad(part, `Testing ${part}…`);
+    const buffer = await runOpenScad(part, `Testing ${part}…`, {
+      renderState: { ...state },
+      operation: "test",
+    });
     statusElement.textContent = "Browser generator verified.";
     return buffer.byteLength;
   },

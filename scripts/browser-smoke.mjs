@@ -5,6 +5,7 @@ import puppeteer from "puppeteer-core";
 
 const host = "127.0.0.1";
 const port = 4173;
+const previewTimeoutMs = 60_000;
 const siteUrl =
   `http://${host}:${port}/3dthings-filament-spool-holder/`;
 const chromeCandidates = [
@@ -98,9 +99,19 @@ try {
   });
 
   await page.setViewport({ width: 1440, height: 1100, deviceScaleFactor: 1 });
-  await page.goto(siteUrl, { waitUntil: "networkidle0" });
+  await page.goto(siteUrl, {
+    waitUntil: "domcontentloaded",
+    timeout: 30_000,
+  });
   await page.waitForSelector("#download-part-button");
   await page.waitForSelector("#print-guide");
+  await page.waitForFunction(
+    () =>
+      document.querySelector("#viewer")?.dataset.previewState === "ready" &&
+      document.querySelector("#viewer canvas") &&
+      window.__spoolCustomizer.getPreviewState()?.holderCount === 2,
+    { timeout: previewTimeoutMs },
+  );
 
   const state = await page.evaluate(() => window.__spoolCustomizer.getState());
   if (state.holderCount !== 2 || state.spoolDiameter !== 220) {
@@ -112,18 +123,46 @@ try {
     linkKitDescription:
       document.querySelector("#link-kit-description")?.textContent,
     guideText: document.querySelector("#print-guide")?.textContent,
+    fitLabel: document.querySelector('label[for="fit-preset"]')?.textContent,
+    fitHelp: document.querySelector("#fit-preset-summary")?.parentElement?.textContent,
+    previewButtonCount: document.querySelectorAll("#preview-button").length,
   }));
   if (
     pageContent.bundleCount !== 4 ||
     !pageContent.linkKitDescription?.includes("2 clips") ||
-    !pageContent.guideText?.includes("Capture the four M3 nuts")
+    !pageContent.guideText?.includes("Capture the four M3 nuts") ||
+    !pageContent.fitLabel?.includes("Part-fit clearance") ||
+    !pageContent.fitHelp?.includes("rail sockets") ||
+    pageContent.previewButtonCount !== 0
   ) {
-    throw new Error(`Print guide is incomplete: ${JSON.stringify(pageContent)}`);
+    throw new Error(`Page UX is incomplete: ${JSON.stringify(pageContent)}`);
   }
+
+  await page.select("#fit-preset", "loose");
+  const extraClearance = await page.evaluate(() => ({
+    state: window.__spoolCustomizer.getState(),
+    summary: document.querySelector("#fit-preset-summary")?.textContent,
+  }));
+  if (
+    extraClearance.state.fitPreset !== "loose" ||
+    extraClearance.state.railFitClearance !== 0.45 ||
+    !extraClearance.summary?.includes("Extra clearance")
+  ) {
+    throw new Error(
+      `Fit preset did not apply clearly: ${JSON.stringify(extraClearance)}`,
+    );
+  }
+  await page.select("#fit-preset", "standard");
 
   await page.evaluate(() => {
     document.querySelector('input[name="holderCount"][value="3"]').click();
   });
+  await page.waitForFunction(
+    () =>
+      document.querySelector("#viewer")?.dataset.previewState === "ready" &&
+      window.__spoolCustomizer.getPreviewState()?.holderCount === 3,
+    { timeout: previewTimeoutMs },
+  );
   const threeHolderDescription = await page.$eval(
     "#link-kit-description",
     (element) => element.textContent,
@@ -134,6 +173,12 @@ try {
   await page.evaluate(() => {
     document.querySelector('input[name="holderCount"][value="2"]').click();
   });
+  await page.waitForFunction(
+    () =>
+      document.querySelector("#viewer")?.dataset.previewState === "ready" &&
+      window.__spoolCustomizer.getPreviewState()?.holderCount === 2,
+    { timeout: previewTimeoutMs },
+  );
 
   const byteLength = await page.evaluate(
     () => window.__spoolCustomizer.generateByteLength("nut_fit_test"),
@@ -159,22 +204,6 @@ try {
     path: "build/site-mobile-smoke.png",
     fullPage: true,
   });
-
-  await page.setViewport({ width: 1440, height: 1100, deviceScaleFactor: 1 });
-  await page.click("#preview-button");
-  await page.waitForFunction(
-    () =>
-      document.querySelector("#viewer-placeholder")?.classList.contains("hidden") &&
-      document.querySelector("#viewer canvas"),
-    { timeout: 30_000 },
-  );
-  const previewStatus = await page.$eval(
-    "#generation-status",
-    (element) => element.textContent,
-  );
-  if (!previewStatus.includes("3D preview ready")) {
-    throw new Error(`Interactive preview did not finish: ${previewStatus}`);
-  }
 
   if (failures.length > 0) {
     throw new Error(failures.join("\n"));

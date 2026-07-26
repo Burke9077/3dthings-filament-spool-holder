@@ -322,6 +322,7 @@ export function openScadDefinitions(input, part) {
   return {
     part,
     show_preview_spool: false,
+    holder_count: Math.max(2, dimensions.holderCount),
     spool_max_diameter: dimensions.spoolDiameter,
     inside_width: dimensions.insideWidth,
     base_depth: dimensions.baseDepth,

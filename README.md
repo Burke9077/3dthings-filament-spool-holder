@@ -18,6 +18,11 @@ Set the spool diameter and clear width, choose one to four linked holders, then
 download one part or a complete print-pack ZIP. Advanced controls expose print
 bed size, axle diameter, M3 nut dimensions, and fit clearances.
 
+The live 3D assembly rebuilds automatically after settings change. The
+part-fit clearance preset changes only mating tolerances—rail sockets, nut
+pockets, screw bores, axle caps, and link clips—not print speed, layers,
+infill, or strength.
+
 The page also offers workflow-sized ZIP groups for the fit coupon, one complete
 holder, the configured link kit, or the entire setup. Each archive carries
 exact copy counts and settings, and the on-page guide covers print orientation
@@ -38,6 +43,7 @@ model-generation server.
 - Repeatable side-by-side link clips that preserve independent spool changes
 - Flat, support-free print orientations for every part
 - Small nut-fit coupon for calibrating a printer before committing to the rails
+- Automatically updating browser-side 3D preview
 - OpenSCAD Customizer support and command-line STL export
 
 The defaults provide 125 mm between the side frames and clearance for a 220 mm
@@ -86,7 +92,8 @@ A nut should drop into the top opening without rotating in its hex pocket, and
 an M3 screw should pass through the horizontal bore. Adjust
 `m3_nut_clearance` or `m3_hole_diameter` if needed. The defaults target a
 reasonably tuned FDM printer; dimensional behavior varies by material and
-machine.
+machine. In the browser customizer, choose **Extra clearance** when mating
+parts bind or **Reduced clearance** when they feel loose.
 
 ## Suggested print settings
 
@@ -102,10 +109,6 @@ rail on its broad face with both nut openings upward. The axle has a faceted
 flat and is already oriented horizontally; a brim can help with low-adhesion
 materials. Print caps with the closed flange against the bed and the socket
 upward.
-
-For unusually wide or heavy spools, consider replacing the printed axle with a
-metal tube or rod sized to the customized cradle instead of scaling the printed
-axle indefinitely.
 
 ## Assembly
 
@@ -156,22 +159,18 @@ neighbor.
 | `frame_thickness` | 8 mm | Thickness of each flat side frame |
 | `frame_web` | 14 mm | Minimum structural web around the large cutout |
 | `axle_diameter` | 18 mm | Printed axle diameter |
+| `axle_facets` | 32 | Round axle profile with a narrow printable flat |
 | `rail_fit_clearance` | 0.30 mm | Per-side clearance in frame sockets |
 | `m3_nut_clearance` | 0.25 mm | Per-side nut-pocket clearance |
 | `axle_cap_fit_clearance` | 0.25 mm | Diametral cap socket clearance |
 | `link_gap` | 32 mm | Gap between linked modules |
 | `link_fit_clearance` | 0.15 mm | Per-side clearance around linked frames |
+| `holder_count` | 2 | Complete modules shown in `linked_assembly` |
 
 Changing the spool envelope automatically updates the axle height and overall
 rail/axle lengths. OpenSCAD assertions reject combinations that would cut rail
 sockets through the frame or leave too little material around the axle.
 
-## Design provenance
+## License
 
-This is an original, clean-room parametric implementation of the generic
-desktop spool-on-axle arrangement. The external reference was the discontinued
-Iverntech AW022 acrylic holder, but no source geometry, logo, decorative
-cutouts, or measured part was copied. The printable structure, joints, captive
-hardware, axle, and proportions were designed from scratch.
-
-Licensed under the [MIT License](LICENSE).
+The design and customizer are licensed under the [MIT License](LICENSE).

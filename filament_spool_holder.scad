@@ -86,7 +86,7 @@ rail_tenon_shoulder = 2.5; // [1.5:0.5:5]
 axle_diameter = 18; // [10:1:30]
 
 // Facets on the support-free axle. Multiples of four give a useful flat.
-axle_facets = 16; // [8:4:32]
+axle_facets = 32; // [16:4:64]
 
 // Radial clearance between the axle and each open cradle.
 axle_slot_clearance = 0.35; // [0.1:0.05:1]
@@ -107,6 +107,9 @@ axle_cap_end_thickness = 3; // [2:0.5:8]
 axle_cap_fit_clearance = 0.25; // [0:0.05:0.8]
 
 // [Modular linking]
+
+// Number of complete modules shown in linked_assembly.
+holder_count = 2; // [2:1:4]
 
 // Clear distance between the facing outside frames of linked holders.
 link_gap = 32; // [20:1:80]
@@ -202,6 +205,9 @@ assert(axle_overhang >= axle_cap_socket_depth + 1,
        "axle_overhang must exceed cap socket depth");
 assert(axle_cap_diameter > axle_diameter + 2,
        "axle caps need at least 1 mm of wall per side");
+assert(holder_count >= 2 && holder_count <= 4
+       && holder_count == floor(holder_count),
+       "holder_count must be an integer from 2 through 4");
 assert(link_gap >= minimum_link_gap,
        "link_gap is too small for two facing axle caps");
 assert(link_grip_depth <
@@ -567,30 +573,40 @@ module holder_assembly() {
 module linked_assembly() {
     holder_spacing = frame_outer_width + link_gap;
 
-    for (side = [-1, 1])
+    for (holder_index = [0 : holder_count - 1])
         translate([
-            side * holder_spacing / 2,
+            (
+                holder_index
+                - (holder_count - 1) / 2
+            ) * holder_spacing,
             0,
             0
         ])
             holder_assembly();
 
-    color([0.92, 0.47, 0.12]) {
-        translate([
-            0,
-            -base_depth / 2 - link_front_wall,
-            link_mount_height
-        ])
-            link_clip_print();
+    color([0.92, 0.47, 0.12])
+        for (link_index = [0 : holder_count - 2]) {
+            link_center =
+                (
+                    link_index
+                    - (holder_count - 2) / 2
+                ) * holder_spacing;
 
-        mirror([0, 1, 0])
             translate([
-                0,
+                link_center,
                 -base_depth / 2 - link_front_wall,
                 link_mount_height
             ])
                 link_clip_print();
-    }
+
+            mirror([0, 1, 0])
+                translate([
+                    link_center,
+                    -base_depth / 2 - link_front_wall,
+                    link_mount_height
+                ])
+                    link_clip_print();
+        }
 }
 
 module nut_fit_test() {
