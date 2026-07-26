@@ -98,7 +98,6 @@ parts bind or **Reduced clearance** when they feel loose.
 ## Suggested print settings
 
 - 0.20 mm layer height
-- 4 perimeters
 - 4 top and bottom layers
 - 25% gyroid or cubic infill
 - PLA, PETG, or ASA
