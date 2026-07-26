@@ -4,7 +4,7 @@ BUILD_DIR := build
 PARTS := side_frame crossbar axle axle_cap link_clip nut_fit_test
 STLS := $(addprefix $(BUILD_DIR)/,$(addsuffix .stl,$(PARTS)))
 
-.PHONY: all stls preview check clean
+.PHONY: all stls preview check release clean
 
 all: stls preview
 
@@ -38,6 +38,9 @@ check: stls
 	@for file in $(STLS); do \
 		test -s "$$file"; \
 	done
+
+release:
+	./scripts/build-release.sh "$${VERSION:-unreleased}"
 
 clean:
 	rm -rf -- $(BUILD_DIR)
