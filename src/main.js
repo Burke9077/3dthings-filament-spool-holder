@@ -536,8 +536,7 @@ Axle length:            ${dimensions.axleLength.toFixed(2)} mm
 Linked frame gap:       ${dimensions.linkGap} mm
 
 Print the nut-fit test before the structural parts.
-Recommended starting point: 0.20 mm layers, 4 perimeters, 25% infill,
-and no supports.
+Recommended starting point: 0.20 mm layers, 25% infill, and no supports.
 `;
 }
 
