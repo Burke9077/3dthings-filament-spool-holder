@@ -34,10 +34,10 @@ jobs:
       - name: Generate an STL in a headless browser
         run: npm run test:browser
 
-      - name: Install OpenSCAD and release tools
+      - name: Install OpenSCAD and ZIP
         run: |
           sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends openscad xvfb zip
+          sudo apt-get install --yes --no-install-recommends openscad zip
 
       - name: Render printable parts
         run: make check
