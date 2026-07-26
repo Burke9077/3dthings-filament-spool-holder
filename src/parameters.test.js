@@ -81,7 +81,16 @@ describe("OpenSCAD and URL serialization", () => {
     expect(definitions.part).toBe("side_frame");
     expect(definitions.spool_max_diameter).toBe(205);
     expect(definitions.m3_nut_across_flats).toBe(5.65);
+    expect(definitions.holder_count).toBe(2);
     expect(definitions.show_preview_spool).toBe(false);
+  });
+
+  it("passes the configured module count to linked previews", () => {
+    const definitions = openScadDefinitions(
+      { ...DEFAULTS, holderCount: 4 },
+      "linked_assembly",
+    );
+    expect(definitions.holder_count).toBe(4);
   });
 
   it("keeps the axle cap safely larger than a custom axle", () => {
