@@ -60,7 +60,7 @@ export const PARTS = Object.freeze([
   Object.freeze({ id: "axle", label: "Axle" }),
   Object.freeze({ id: "axle_cap", label: "Axle cap" }),
   Object.freeze({ id: "link_clip", label: "Modular link clip" }),
-  Object.freeze({ id: "nut_fit_test", label: "Nut-fit coupon" }),
+  Object.freeze({ id: "nut_fit_test", label: "Nut-fit test" }),
 ]);
 
 const numericRanges = Object.freeze({
@@ -254,9 +254,9 @@ export function printGroupFor(groupId, holderCount) {
   if (groupId === "fit_check") {
     return {
       id: groupId,
-      label: "Fit check",
+      label: "Fit test",
       items: [
-        { id: "nut_fit_test", label: "Nut-fit coupon", quantity: 1 },
+        { id: "nut_fit_test", label: "Nut-fit test", quantity: 1 },
         { id: "m3_nut", label: "M3 hex nut", quantity: 1 },
         {
           id: "m3_screw",
@@ -273,7 +273,7 @@ export function printGroupFor(groupId, holderCount) {
     );
     return {
       id: groupId,
-      label: "One holder",
+      label: "One holder module",
       items: [
         oneHolder.side_frame,
         oneHolder.crossbar,
@@ -288,7 +288,7 @@ export function printGroupFor(groupId, holderCount) {
   if (groupId === "link_kit") {
     return {
       id: groupId,
-      label: "Link kit",
+      label: "Link clips",
       items: count > 1 ? [catalog.link_clip] : [],
     };
   }
@@ -296,9 +296,9 @@ export function printGroupFor(groupId, holderCount) {
   if (groupId === "complete") {
     return {
       id: groupId,
-      label: "Complete setup",
+      label: "Complete print pack",
       items: [
-        { id: "nut_fit_test", label: "Nut-fit coupon", quantity: 1 },
+        { id: "nut_fit_test", label: "Nut-fit test", quantity: 1 },
         ...quantitiesFor(count).filter(({ quantity }) => quantity > 0),
       ],
     };

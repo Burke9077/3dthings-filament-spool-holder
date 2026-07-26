@@ -15,18 +15,18 @@ ties.
 Use the hosted customizer at
 [burke9077.github.io/3dthings-filament-spool-holder](https://burke9077.github.io/3dthings-filament-spool-holder/).
 Set the spool diameter and clear width, choose one to four linked holders, then
-download one part or a complete print-pack ZIP. Advanced controls expose print
-bed size, axle diameter, M3 nut dimensions, and fit clearances.
+download the complete print-pack ZIP. Advanced controls expose print-bed size,
+axle diameter, M3 nut dimensions, and fit clearances.
 
 The live 3D assembly rebuilds automatically after settings change. The
 part-fit clearance preset changes only mating tolerances—rail sockets, nut
 pockets, screw bores, axle caps, and link clips—not print speed, layers,
 infill, or strength.
 
-The page also offers workflow-sized ZIP groups for the fit coupon, one complete
-holder, the configured link kit, or the entire setup. Each archive carries
-exact copy counts and settings, and the on-page guide covers print orientation
-and assembly.
+Optional downloads for the nut-fit test, one holder module, link clips, and
+individual replacement parts are kept under a secondary menu. Each ZIP carries
+copy counts in its filenames and manifest, and the on-page guide covers print
+orientation and assembly.
 
 The customizer runs the official OpenSCAD WebAssembly build entirely in the
 browser. Dimensions and generated geometry stay on the device; there is no
@@ -42,7 +42,7 @@ model-generation server.
 - Removable printed axle with press-fit end caps
 - Repeatable side-by-side link clips that preserve independent spool changes
 - Flat, support-free print orientations for every part
-- Small nut-fit coupon for calibrating a printer before committing to the rails
+- Small nut-fit test piece for calibrating a printer before committing to the rails
 - Automatically updating browser-side 3D preview
 - OpenSCAD Customizer support and command-line STL export
 
