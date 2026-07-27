@@ -125,22 +125,25 @@
 
           <div class="control">
             <div class="label-row">
-              <label for="inside-width">Clear width between frames</label>
-              <output id="inside-width-output" for="inside-width">
-                125 mm
+              <label for="spool-width">Maximum spool width</label>
+              <output id="spool-width-output" for="spool-width">
+                115 mm
               </output>
             </div>
             <input
-              id="inside-width"
-              name="insideWidth"
-              data-param="insideWidth"
+              id="spool-width"
+              name="spoolWidth"
+              data-param="spoolWidth"
               type="range"
-              min="40"
-              max="250"
+              min="30"
+              max="240"
               step="1"
-              value="125"
+              value="115"
             />
-            <p class="hint">Measure the spool across both outside flanges.</p>
+            <p class="hint">
+              Measure across both outside flanges. The holder adds configured
+              clearance beside each face.
+            </p>
           </div>
 
           <fieldset class="control">
@@ -187,6 +190,18 @@
               <label>
                 Footprint depth
                 <span><input name="baseDepth" type="number" min="100" max="300" step="1" /> mm</span>
+              </label>
+              <label>
+                Clearance beside each spool face
+                <span><input name="sideClearance" type="number" min="1" max="20" step="0.5" /> mm</span>
+              </label>
+              <label>
+                Minimum table clearance
+                <span><input name="floorClearance" type="number" min="2" max="40" step="1" /> mm</span>
+              </label>
+              <label>
+                Gap above crossrail top plane
+                <span><input name="railClearance" type="number" min="2" max="40" step="1" /> mm</span>
               </label>
               <label>
                 Axle diameter
@@ -255,19 +270,19 @@
           <dl class="dimension-strip">
             <div>
               <dt>Bed envelope</dt>
-              <dd id="frame-print-size">175 × 159 mm</dd>
+              <dd id="frame-print-size">175 × 188 mm</dd>
             </div>
             <div>
               <dt>Axle center</dt>
-              <dd id="axle-height">143 mm</dd>
+              <dd id="axle-height">172 mm</dd>
             </div>
             <div>
-              <dt>Axle length</dt>
-              <dd id="axle-length">163 mm</dd>
+              <dt>Clear width</dt>
+              <dd id="inside-width">125 mm</dd>
             </div>
             <div>
-              <dt>Linked span</dt>
-              <dd id="linked-span">330 mm</dd>
+              <dt>Limiting gap</dt>
+              <dd id="limiting-clearance">15 mm · rails</dd>
             </div>
           </dl>
         </section>
@@ -456,7 +471,8 @@
               <li>
                 Pass the axle through the spool and lower it into the cradles.
                 The axle should bear on the upper inside edge of the spool
-                hole while the spool clears the floor; then add both caps.
+                hole while the spool clears the floor and both crossrails;
+                then add both caps.
               </li>
             </ol>
           </article>

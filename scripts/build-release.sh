@@ -3,7 +3,7 @@
 set -euo pipefail
 
 version_label="${1:-unreleased}"
-default_geometry="220d-60b-125w"
+default_geometry="220d-60b-115sw-175base-15gap"
 
 if [[ ! "$version_label" =~ ^(unreleased|v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?)$ ]]; then
   echo "Version must be 'unreleased' or a semantic version such as v0.1.0." >&2
@@ -76,8 +76,12 @@ cp "$repo_root"/docs/*.png "$package_dir/images/"
   printf 'DEFAULT ENVELOPE\n'
   printf 'Maximum spool diameter: 220 mm\n'
   printf 'Maximum spool bore: 60 mm\n'
+  printf 'Maximum spool width: 115 mm\n'
   printf 'Clear width: 125 mm\n'
-  printf 'Axle center height: 143 mm\n\n'
+  printf 'Minimum gap above crossrail top plane: 15 mm\n'
+  printf 'Actual floor clearance: 41 mm\n'
+  printf 'Axle center height: 172 mm\n'
+  printf 'Height-limiting obstacle: crossrails\n\n'
   printf 'DEFAULT TWO-HOLDER PRINT QUANTITIES\n'
   printf 'Each STL contains one part; set the filename quantity in your slicer.\n'
   printf '4  side frames\n'

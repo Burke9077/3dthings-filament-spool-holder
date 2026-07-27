@@ -31,14 +31,20 @@ spool_max_diameter = 220; // [120:1:300]
 // Largest center-hole diameter among the spools this frame must support.
 spool_max_bore_diameter = 60; // [20:1:120]
 
-// Clear distance between the two side frames.
-inside_width = 125; // [40:1:250]
+// Maximum spool width across both outside flanges.
+spool_max_width = 115; // [30:1:240]
+
+// Clearance between each spool face and side frame.
+spool_side_clearance = 5; // [1:0.5:20]
 
 // Front-to-back footprint of each side frame.
 base_depth = 175; // [100:1:300]
 
-// Gap under a spool at spool_max_diameter.
-spool_floor_clearance = 12; // [2:1:40]
+// Minimum vertical gap between the spool's lowest point and the table.
+spool_floor_clearance = 15; // [2:1:40]
+
+// Minimum vertical gap above the complete crossrail top plane.
+spool_rail_clearance = 15; // [2:1:40]
 
 // [Side frames]
 
@@ -149,23 +155,41 @@ m3_nut_clearance = 0.25; // [0.05:0.05:0.8]
 // [Preview spool]
 
 preview_spool_diameter = spool_max_diameter;
-preview_spool_width = min(70, inside_width - 4);
+preview_spool_width = spool_max_width;
 preview_spool_bore = spool_max_bore_diameter;
 
 /* [Hidden] */
 
 epsilon = 0.02;
+clearance_test_epsilon = 0.10;
+inside_width =
+    spool_max_width + 2 * spool_side_clearance;
+spool_radius = spool_max_diameter / 2;
 spool_center_drop =
     (spool_max_bore_diameter - axle_diameter) / 2;
 preview_spool_center_drop =
     (preview_spool_bore - axle_diameter) / 2;
+rail_center_offset = base_depth / 2 - rail_inset;
+rail_top =
+    rail_center_height + rail_height / 2;
+floor_limited_spool_center_height =
+    spool_radius + spool_floor_clearance;
+rail_limited_spool_center_height =
+    rail_top + spool_radius + spool_rail_clearance;
+spool_center_height =
+    max(
+        floor_limited_spool_center_height,
+        rail_limited_spool_center_height
+    );
+clearance_test_spool_center_height = spool_center_height;
 axle_height =
-    spool_max_diameter / 2
-        + spool_center_drop
-        + spool_floor_clearance;
+    spool_center_height + spool_center_drop;
+actual_floor_clearance =
+    spool_center_height - spool_radius;
+actual_rail_vertical_clearance =
+    spool_center_height - spool_radius - rail_top;
 axle_slot_radius = axle_diameter / 2 + axle_slot_clearance;
 frame_top = axle_height + axle_slot_radius + axle_slot_wall;
-rail_center_offset = base_depth / 2 - rail_inset;
 frame_outer_width = inside_width + 2 * frame_thickness;
 rail_total_length = inside_width + 2 * rail_tenon_depth;
 rail_tenon_cross_depth = rail_depth - 2 * rail_tenon_shoulder;
@@ -198,6 +222,14 @@ assert(spool_max_bore_diameter > axle_diameter,
        "spool_max_bore_diameter must exceed axle_diameter");
 assert(spool_max_bore_diameter < spool_max_diameter - 8,
        "Leave at least 4 mm of spool flange outside the center bore");
+assert(spool_max_width > 0,
+       "spool_max_width must be positive");
+assert(spool_side_clearance >= 1,
+       "Leave at least 1 mm beside each spool face");
+assert(spool_floor_clearance >= 0,
+       "spool_floor_clearance must not be negative");
+assert(spool_rail_clearance >= 0,
+       "spool_rail_clearance must not be negative");
 assert(preview_spool_bore > axle_diameter,
        "preview_spool_bore must exceed axle_diameter");
 assert(base_depth > 2 * (rail_inset + rail_depth / 2),
@@ -207,6 +239,11 @@ assert(rail_center_height - rail_height / 2 >= 3,
 assert(rail_center_height + rail_height / 2 <
        frame_shoulder_height,
        "Rail sockets must remain inside the vertical frame shoulders");
+assert(actual_floor_clearance >= spool_floor_clearance - 0.001,
+       "Spool envelope does not clear the table");
+assert(actual_rail_vertical_clearance
+           >= spool_rail_clearance - 0.001,
+       "Spool envelope does not clear the crossrail top plane");
 assert(rail_tenon_cross_depth > nut_pocket_width + 2,
        "Rail tenon is too narrow for the M3 nut pocket");
 assert(rail_tenon_height > nut_pocket_corner_diameter + 2,
@@ -587,6 +624,85 @@ module holder_assembly() {
     }
 }
 
+module clearance_keepout_test() {
+    test_spool_width = spool_max_width;
+
+    union() {
+        intersection() {
+            translate([0, 0, clearance_test_spool_center_height])
+                rotate([0, 90, 0])
+                    cylinder(
+                        d = spool_max_diameter
+                            + 2 * (
+                                spool_rail_clearance
+                                    - clearance_test_epsilon
+                            ),
+                        h = test_spool_width,
+                        center = true,
+                        $fn = 128
+                    );
+
+            translate([
+                -frame_outer_width,
+                -base_depth,
+                -20
+            ])
+                cube([
+                    2 * frame_outer_width,
+                    2 * base_depth,
+                    rail_top + 20
+                ]);
+        }
+
+        intersection() {
+            translate([0, 0, clearance_test_spool_center_height])
+                rotate([0, 90, 0])
+                    cylinder(
+                        d = spool_max_diameter
+                            + 2 * (
+                                spool_floor_clearance
+                                    - clearance_test_epsilon
+                            ),
+                        h = test_spool_width,
+                        center = true,
+                        $fn = 128
+                    );
+
+            translate([
+                -frame_outer_width,
+                -base_depth,
+                -20
+            ])
+                cube([
+                    2 * frame_outer_width,
+                    2 * base_depth,
+                    20
+                ]);
+        }
+
+        intersection() {
+            translate([0, 0, clearance_test_spool_center_height])
+                rotate([0, 90, 0])
+                    cylinder(
+                        d = spool_max_diameter,
+                        h = spool_max_width
+                            + 2 * (
+                                spool_side_clearance
+                                    - clearance_test_epsilon
+                            ),
+                        center = true,
+                        $fn = 128
+                    );
+
+            union() {
+                left_side_frame_assembly();
+                mirror([1, 0, 0])
+                    left_side_frame_assembly();
+            }
+        }
+    }
+}
+
 module linked_assembly() {
     holder_spacing = frame_outer_width + link_gap;
 
@@ -654,5 +770,7 @@ else if (part == "link_clip")
     link_clip_print();
 else if (part == "nut_fit_test")
     nut_fit_test();
+else if (part == "clearance_keepout_test")
+    clearance_keepout_test();
 else
     assert(false, str("Unknown part: ", part));

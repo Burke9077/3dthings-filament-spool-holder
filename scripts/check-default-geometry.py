@@ -7,7 +7,7 @@ import re
 import sys
 
 
-EXPECTED_SIZE = (175.0, 149.507, 8.0)
+EXPECTED_SIZE = (175.0, 177.315, 8.0)
 TOLERANCE = 0.02
 VERTEX_PATTERN = re.compile(
     rb"^\s*vertex\s+"

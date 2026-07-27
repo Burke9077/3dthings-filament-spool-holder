@@ -17,6 +17,10 @@ material around the load paths while omitting cosmetic panels and branding.
 
 Each holder remains a complete independent module. Two clips connect each
 adjacent pair, so one spool can be changed without disturbing its neighbor.
+The generator derives frame spacing and axle height from the full spool
+envelope. It keeps the spool's lowest point above the complete crossrail top
+plane by the configured safety gap rather than relying on rail position or
+checking floor clearance alone.
 
 The browser customizer generates the configured STLs locally:
 
@@ -69,7 +73,7 @@ caps flange-down, and clips flat.
 4. Install and evenly tighten four M3 screws on a flat surface.
 5. Pass the axle through the spool and lower it into the cradles. Confirm the
    axle bears on the upper inside edge of the center hole while the spool
-   clears the floor, then add both caps.
+   clears the floor and both crossrails, then add both caps.
 6. For multiple holders, connect neighboring frames with one front and one
    rear link clip.
 

@@ -39,6 +39,8 @@ check: stls
 		test -s "$$file"; \
 	done
 	python3 scripts/check-default-geometry.py $(BUILD_DIR)/side_frame.stl
+	python3 scripts/check-reusable-geometry.py
+	python3 scripts/check-spool-clearance.py
 
 release:
 	./scripts/build-release.sh "$${VERSION:-unreleased}"

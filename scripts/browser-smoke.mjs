@@ -117,7 +117,8 @@ try {
   if (
     state.holderCount !== 2 ||
     state.spoolDiameter !== 220 ||
-    state.spoolBoreDiameter !== 60
+    state.spoolBoreDiameter !== 60 ||
+    state.spoolWidth !== 115
   ) {
     throw new Error(`Unexpected initial state: ${JSON.stringify(state)}`);
   }
@@ -133,6 +134,12 @@ try {
       document.querySelector('label[for="spool-bore-diameter"]')?.textContent,
     spoolBoreHelp:
       document.querySelector("#spool-bore-diameter")?.parentElement?.textContent,
+    spoolWidthLabel:
+      document.querySelector('label[for="spool-width"]')?.textContent,
+    spoolWidthHelp:
+      document.querySelector("#spool-width")?.parentElement?.textContent,
+    limitingClearance:
+      document.querySelector("#limiting-clearance")?.textContent,
     previewButtonCount: document.querySelectorAll("#preview-button").length,
     previewHeaderChildCount:
       document.querySelector(".viewer-panel .panel-heading")?.children.length,
@@ -154,10 +161,14 @@ try {
     pageContent.bundleCount !== 4 ||
     !pageContent.linkKitDescription?.includes("2 clips") ||
     !pageContent.guideText?.includes("Capture the four M3 nuts") ||
+    !pageContent.guideText?.includes("clears the floor and both crossrails") ||
     !pageContent.fitLabel?.includes("Part-fit clearance") ||
     !pageContent.fitHelp?.includes("rail sockets") ||
     !pageContent.spoolBoreLabel?.includes("center hole") ||
     !pageContent.spoolBoreHelp?.includes("upper inside edge") ||
+    !pageContent.spoolWidthLabel?.includes("Maximum spool width") ||
+    !pageContent.spoolWidthHelp?.includes("adds configured") ||
+    pageContent.limitingClearance?.trim() !== "15 mm · rails" ||
     pageContent.previewButtonCount !== 0 ||
     pageContent.previewHeaderChildCount !== 1 ||
     !pageContent.completeButtonText?.includes("Download all parts") ||
@@ -189,7 +200,7 @@ try {
   if (
     boreUpdate.state.spoolBoreDiameter !== 65 ||
     boreUpdate.output?.trim() !== "65 mm" ||
-    boreUpdate.axleHeight?.trim() !== "145.5 mm"
+    boreUpdate.axleHeight?.trim() !== "174.5 mm"
   ) {
     throw new Error(
       `Spool bore did not update geometry: ${JSON.stringify(boreUpdate)}`,

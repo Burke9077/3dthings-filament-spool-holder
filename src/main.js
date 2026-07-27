@@ -165,18 +165,24 @@ function render() {
     formatMillimeters(dimensions.spoolDiameter);
   document.querySelector("#spool-bore-diameter-output").textContent =
     formatMillimeters(dimensions.spoolBoreDiameter);
-  document.querySelector("#inside-width-output").textContent =
+  document.querySelector("#spool-width-output").textContent =
+    formatMillimeters(dimensions.spoolWidth);
+  document.querySelector("#inside-width").textContent =
     formatMillimeters(dimensions.insideWidth);
   document.querySelector("#frame-print-size").textContent =
     `${Math.round(dimensions.baseDepth)} × ${Math.round(dimensions.holderHeight)} mm`;
   document.querySelector("#axle-height").textContent =
     formatMillimeters(dimensions.axleHeight);
-  document.querySelector("#axle-length").textContent =
-    formatMillimeters(dimensions.axleLength);
-  document.querySelector("#linked-span").textContent =
-    dimensions.holderCount === 1
-      ? "Single module"
-      : formatMillimeters(dimensions.linkedSpan);
+  const limitingClearance =
+    dimensions.limitingConstraint === "crossrails"
+      ? dimensions.actualRailVerticalClearance
+      : dimensions.actualFloorClearance;
+  document.querySelector("#limiting-clearance").textContent =
+    `${formatMillimeters(limitingClearance)} · ${
+      dimensions.limitingConstraint === "crossrails"
+        ? "rails"
+        : "floor"
+    }`;
 
   const depthInput = form.elements.namedItem("baseDepth");
   depthInput.disabled = state.autoBaseDepth;
@@ -533,10 +539,14 @@ ${quantities}
 KEY DIMENSIONS
 Maximum spool diameter: ${dimensions.spoolDiameter} mm
 Maximum spool bore:     ${dimensions.spoolBoreDiameter} mm
+Maximum spool width:    ${dimensions.spoolWidth} mm
 Clear width:            ${dimensions.insideWidth} mm
 Footprint depth:        ${dimensions.baseDepth} mm
 Bed-envelope height:    ${dimensions.holderHeight.toFixed(2)} mm
 Axle center height:     ${dimensions.axleHeight.toFixed(2)} mm
+Table clearance:        ${dimensions.actualFloorClearance.toFixed(2)} mm
+Crossrail vertical gap: ${dimensions.actualRailVerticalClearance.toFixed(2)} mm
+Height constraint:      ${dimensions.limitingConstraint}
 Axle length:            ${dimensions.axleLength.toFixed(2)} mm
 Linked frame gap:       ${dimensions.linkGap} mm
 

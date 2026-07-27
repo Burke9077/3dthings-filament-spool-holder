@@ -25,13 +25,15 @@ export const FIT_PRESETS = Object.freeze({
 export const DEFAULTS = Object.freeze({
   spoolDiameter: 220,
   spoolBoreDiameter: 60,
-  insideWidth: 125,
+  spoolWidth: 115,
+  sideClearance: 5,
   holderCount: 2,
   fitPreset: "standard",
   printBed: 220,
   autoBaseDepth: true,
   baseDepth: 175,
-  floorClearance: 12,
+  floorClearance: 15,
+  railClearance: 15,
   frameThickness: 8,
   frameWeb: 14,
   axleDiameter: 18,
@@ -39,6 +41,10 @@ export const DEFAULTS = Object.freeze({
   axleOverhang: 11,
   capEndThickness: 3,
   railTenonDepth: 4,
+  railDepth: 20,
+  railHeight: 18,
+  railInset: 16,
+  railCenterHeight: 17,
   railFitClearance: 0.3,
   nutAcrossFlats: 5.5,
   nutThickness: 2.4,
@@ -53,17 +59,17 @@ export const SIZE_PRESETS = Object.freeze({
   standard: Object.freeze({
     spoolDiameter: 200,
     spoolBoreDiameter: 60,
-    insideWidth: 90,
+    spoolWidth: 80,
   }),
   wide: Object.freeze({
     spoolDiameter: 220,
     spoolBoreDiameter: 60,
-    insideWidth: 125,
+    spoolWidth: 115,
   }),
   large: Object.freeze({
     spoolDiameter: 250,
     spoolBoreDiameter: 60,
-    insideWidth: 150,
+    spoolWidth: 140,
   }),
 });
 
@@ -79,10 +85,13 @@ export const PARTS = Object.freeze([
 const numericRanges = Object.freeze({
   spoolDiameter: [120, 300],
   spoolBoreDiameter: [20, 120],
-  insideWidth: [40, 250],
+  spoolWidth: [30, 240],
+  sideClearance: [1, 20],
   holderCount: [1, 4],
   printBed: [120, 500],
   baseDepth: [100, 300],
+  floorClearance: [2, 40],
+  railClearance: [2, 40],
   axleDiameter: [10, 30],
   railFitClearance: [0.05, 0.8],
   nutAcrossFlats: [5, 7],
@@ -97,12 +106,15 @@ const numericRanges = Object.freeze({
 const queryKeys = Object.freeze({
   d: "spoolDiameter",
   spoolBore: "spoolBoreDiameter",
-  w: "insideWidth",
+  sw: "spoolWidth",
+  side: "sideClearance",
   n: "holderCount",
   fit: "fitPreset",
   bed: "printBed",
   autoDepth: "autoBaseDepth",
   depth: "baseDepth",
+  floorGap: "floorClearance",
+  railGap: "railClearance",
   axle: "axleDiameter",
   nutAf: "nutAcrossFlats",
   nutT: "nutThickness",
@@ -165,23 +177,39 @@ export function deriveDimensions(input) {
   const baseDepth = state.autoBaseDepth
     ? Math.round(Math.max(140, state.spoolDiameter * 0.8) / 5) * 5
     : state.baseDepth;
+  const insideWidth =
+    state.spoolWidth + 2 * state.sideClearance;
+  const spoolRadius = state.spoolDiameter / 2;
   const spoolCenterDrop =
     (state.spoolBoreDiameter - state.axleDiameter) / 2;
-  const axleHeight =
-    state.spoolDiameter / 2 +
-    spoolCenterDrop +
-    state.floorClearance;
+  const railCenterOffset =
+    baseDepth / 2 - state.railInset;
+  const railTop =
+    state.railCenterHeight + state.railHeight / 2;
+  const floorLimitedSpoolCenterHeight =
+    spoolRadius + state.floorClearance;
+  const railLimitedSpoolCenterHeight =
+    railTop + spoolRadius + state.railClearance;
+  const spoolCenterHeight = Math.max(
+    floorLimitedSpoolCenterHeight,
+    railLimitedSpoolCenterHeight,
+  );
+  const axleHeight = spoolCenterHeight + spoolCenterDrop;
+  const actualFloorClearance =
+    spoolCenterHeight - spoolRadius;
+  const actualRailVerticalClearance =
+    spoolCenterHeight - spoolRadius - railTop;
   const axleSlotRadius =
     state.axleDiameter / 2 + state.axleSlotClearance;
   const holderHeight = axleHeight + axleSlotRadius + 7;
   const frameOuterWidth =
-    state.insideWidth + 2 * state.frameThickness;
+    insideWidth + 2 * state.frameThickness;
   const axleLength =
     frameOuterWidth + 2 * state.axleOverhang;
   const axleCapDiameter =
     Math.max(27, state.axleDiameter + 9);
   const railLength =
-    state.insideWidth + 2 * state.railTenonDepth;
+    insideWidth + 2 * state.railTenonDepth;
   const minimumLinkGap =
     2 * (state.axleOverhang + state.capEndThickness) + 4;
   const linkedSpan =
@@ -193,7 +221,21 @@ export function deriveDimensions(input) {
   return {
     ...state,
     baseDepth,
+    insideWidth,
+    spoolRadius,
     spoolCenterDrop,
+    spoolCenterHeight,
+    railCenterOffset,
+    railTop,
+    floorLimitedSpoolCenterHeight,
+    railLimitedSpoolCenterHeight,
+    actualFloorClearance,
+    actualRailVerticalClearance,
+    limitingConstraint:
+      railLimitedSpoolCenterHeight >
+      floorLimitedSpoolCenterHeight
+        ? "crossrails"
+        : "floor",
     axleHeight,
     holderHeight,
     frameOuterWidth,
@@ -215,6 +257,16 @@ export function validateState(input) {
     errors.push("Clear width is too small for the selected axle.");
   }
 
+  if (
+    dimensions.railCenterOffset -
+      dimensions.railDepth / 2 <=
+    0
+  ) {
+    errors.push(
+      "Footprint depth is too small to place the crossrails outside the spool centerline.",
+    );
+  }
+
   if (dimensions.spoolBoreDiameter <= dimensions.axleDiameter) {
     errors.push(
       "Maximum spool bore must be larger than the axle diameter.",
@@ -230,6 +282,22 @@ export function validateState(input) {
   if (dimensions.nutThickness + 2 * dimensions.nutClearance >= 3.5) {
     errors.push(
       "Nut thickness plus clearance is too large for the 4 mm rail tenon.",
+    );
+  }
+
+  if (
+    dimensions.actualFloorClearance <
+    dimensions.floorClearance - 0.001
+  ) {
+    errors.push("The spool envelope intersects the table keepout.");
+  }
+
+  if (
+    dimensions.actualRailVerticalClearance <
+    dimensions.railClearance - 0.001
+  ) {
+    errors.push(
+      "The spool envelope intersects the crossrail top-plane keepout.",
     );
   }
 
@@ -279,11 +347,13 @@ export function quantitiesFor(holderCount) {
 }
 
 export function geometrySlug(input) {
-  const state = normalizeState(input);
+  const dimensions = deriveDimensions(input);
   return [
-    `${state.spoolDiameter}d`,
-    `${state.spoolBoreDiameter}b`,
-    `${state.insideWidth}w`,
+    `${dimensions.spoolDiameter}d`,
+    `${dimensions.spoolBoreDiameter}b`,
+    `${dimensions.spoolWidth}sw`,
+    `${dimensions.baseDepth}base`,
+    `${dimensions.railClearance}gap`,
   ].join("-");
 }
 
@@ -368,9 +438,15 @@ export function openScadDefinitions(input, part) {
     holder_count: Math.max(2, dimensions.holderCount),
     spool_max_diameter: dimensions.spoolDiameter,
     spool_max_bore_diameter: dimensions.spoolBoreDiameter,
-    inside_width: dimensions.insideWidth,
+    spool_max_width: dimensions.spoolWidth,
+    spool_side_clearance: dimensions.sideClearance,
     base_depth: dimensions.baseDepth,
     spool_floor_clearance: dimensions.floorClearance,
+    spool_rail_clearance: dimensions.railClearance,
+    rail_depth: dimensions.railDepth,
+    rail_height: dimensions.railHeight,
+    rail_inset: dimensions.railInset,
+    rail_center_height: dimensions.railCenterHeight,
     axle_diameter: dimensions.axleDiameter,
     axle_cap_diameter: dimensions.axleCapDiameter,
     rail_fit_clearance: dimensions.railFitClearance,
