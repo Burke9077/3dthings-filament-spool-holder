@@ -24,6 +24,7 @@ export const FIT_PRESETS = Object.freeze({
 
 export const DEFAULTS = Object.freeze({
   spoolDiameter: 220,
+  spoolBoreDiameter: 60,
   insideWidth: 125,
   holderCount: 2,
   fitPreset: "standard",
@@ -49,9 +50,21 @@ export const DEFAULTS = Object.freeze({
 });
 
 export const SIZE_PRESETS = Object.freeze({
-  standard: Object.freeze({ spoolDiameter: 200, insideWidth: 90 }),
-  wide: Object.freeze({ spoolDiameter: 220, insideWidth: 125 }),
-  large: Object.freeze({ spoolDiameter: 250, insideWidth: 150 }),
+  standard: Object.freeze({
+    spoolDiameter: 200,
+    spoolBoreDiameter: 60,
+    insideWidth: 90,
+  }),
+  wide: Object.freeze({
+    spoolDiameter: 220,
+    spoolBoreDiameter: 60,
+    insideWidth: 125,
+  }),
+  large: Object.freeze({
+    spoolDiameter: 250,
+    spoolBoreDiameter: 60,
+    insideWidth: 150,
+  }),
 });
 
 export const PARTS = Object.freeze([
@@ -65,6 +78,7 @@ export const PARTS = Object.freeze([
 
 const numericRanges = Object.freeze({
   spoolDiameter: [120, 300],
+  spoolBoreDiameter: [20, 120],
   insideWidth: [40, 250],
   holderCount: [1, 4],
   printBed: [120, 500],
@@ -82,6 +96,7 @@ const numericRanges = Object.freeze({
 
 const queryKeys = Object.freeze({
   d: "spoolDiameter",
+  spoolBore: "spoolBoreDiameter",
   w: "insideWidth",
   n: "holderCount",
   fit: "fitPreset",
@@ -150,7 +165,12 @@ export function deriveDimensions(input) {
   const baseDepth = state.autoBaseDepth
     ? Math.round(Math.max(140, state.spoolDiameter * 0.8) / 5) * 5
     : state.baseDepth;
-  const axleHeight = state.spoolDiameter / 2 + state.floorClearance;
+  const spoolCenterDrop =
+    (state.spoolBoreDiameter - state.axleDiameter) / 2;
+  const axleHeight =
+    state.spoolDiameter / 2 +
+    spoolCenterDrop +
+    state.floorClearance;
   const axleSlotRadius =
     state.axleDiameter / 2 + state.axleSlotClearance;
   const holderHeight = axleHeight + axleSlotRadius + 7;
@@ -173,6 +193,7 @@ export function deriveDimensions(input) {
   return {
     ...state,
     baseDepth,
+    spoolCenterDrop,
     axleHeight,
     holderHeight,
     frameOuterWidth,
@@ -192,6 +213,18 @@ export function validateState(input) {
 
   if (dimensions.insideWidth <= dimensions.axleDiameter + 8) {
     errors.push("Clear width is too small for the selected axle.");
+  }
+
+  if (dimensions.spoolBoreDiameter <= dimensions.axleDiameter) {
+    errors.push(
+      "Maximum spool bore must be larger than the axle diameter.",
+    );
+  }
+
+  if (dimensions.spoolBoreDiameter >= dimensions.spoolDiameter - 8) {
+    errors.push(
+      "Maximum spool bore must leave at least 4 mm of flange per side.",
+    );
   }
 
   if (dimensions.nutThickness + 2 * dimensions.nutClearance >= 3.5) {
@@ -243,6 +276,15 @@ export function quantitiesFor(holderCount) {
       quantity: 4 * count,
     },
   ];
+}
+
+export function geometrySlug(input) {
+  const state = normalizeState(input);
+  return [
+    `${state.spoolDiameter}d`,
+    `${state.spoolBoreDiameter}b`,
+    `${state.insideWidth}w`,
+  ].join("-");
 }
 
 export function printGroupFor(groupId, holderCount) {
@@ -321,11 +363,14 @@ export function openScadDefinitions(input, part) {
 
   return {
     part,
-    show_preview_spool: false,
+    show_preview_spool:
+      part === "assembly" || part === "linked_assembly",
     holder_count: Math.max(2, dimensions.holderCount),
     spool_max_diameter: dimensions.spoolDiameter,
+    spool_max_bore_diameter: dimensions.spoolBoreDiameter,
     inside_width: dimensions.insideWidth,
     base_depth: dimensions.baseDepth,
+    spool_floor_clearance: dimensions.floorClearance,
     axle_diameter: dimensions.axleDiameter,
     axle_cap_diameter: dimensions.axleCapDiameter,
     rail_fit_clearance: dimensions.railFitClearance,

@@ -95,7 +95,32 @@
               step="1"
               value="220"
             />
-            <p class="hint">Frame height is derived from this measurement.</p>
+            <p class="hint">
+              Measure the largest spool across its outside flanges.
+            </p>
+          </div>
+
+          <div class="control">
+            <div class="label-row">
+              <label for="spool-bore-diameter">Maximum spool center hole</label>
+              <output id="spool-bore-diameter-output" for="spool-bore-diameter">
+                60 mm
+              </output>
+            </div>
+            <input
+              id="spool-bore-diameter"
+              name="spoolBoreDiameter"
+              data-param="spoolBoreDiameter"
+              type="range"
+              min="20"
+              max="120"
+              step="1"
+              value="60"
+            />
+            <p class="hint">
+              Measure across the widest center hole. A larger hole needs a
+              taller axle because the axle bears on its upper inside edge.
+            </p>
           </div>
 
           <div class="control">
@@ -229,12 +254,12 @@
 
           <dl class="dimension-strip">
             <div>
-              <dt>Frame print</dt>
-              <dd id="frame-print-size">175 × 138 mm</dd>
+              <dt>Bed envelope</dt>
+              <dd id="frame-print-size">175 × 159 mm</dd>
             </div>
             <div>
-              <dt>Holder height</dt>
-              <dd id="holder-height">138 mm</dd>
+              <dt>Axle center</dt>
+              <dd id="axle-height">143 mm</dd>
             </div>
             <div>
               <dt>Axle length</dt>
@@ -428,7 +453,11 @@
                 Install four M3 × 10 mm screws from the outside and tighten
                 evenly on a flat surface.
               </li>
-              <li>Pass the axle through the spool, lower it into the cradles, and add both caps.</li>
+              <li>
+                Pass the axle through the spool and lower it into the cradles.
+                The axle should bear on the upper inside edge of the spool
+                hole while the spool clears the floor; then add both caps.
+              </li>
             </ol>
           </article>
 

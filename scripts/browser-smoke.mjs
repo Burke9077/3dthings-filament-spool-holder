@@ -114,7 +114,11 @@ try {
   );
 
   const state = await page.evaluate(() => window.__spoolCustomizer.getState());
-  if (state.holderCount !== 2 || state.spoolDiameter !== 220) {
+  if (
+    state.holderCount !== 2 ||
+    state.spoolDiameter !== 220 ||
+    state.spoolBoreDiameter !== 60
+  ) {
     throw new Error(`Unexpected initial state: ${JSON.stringify(state)}`);
   }
 
@@ -125,6 +129,10 @@ try {
     guideText: document.querySelector("#print-guide")?.textContent,
     fitLabel: document.querySelector('label[for="fit-preset"]')?.textContent,
     fitHelp: document.querySelector("#fit-preset-summary")?.parentElement?.textContent,
+    spoolBoreLabel:
+      document.querySelector('label[for="spool-bore-diameter"]')?.textContent,
+    spoolBoreHelp:
+      document.querySelector("#spool-bore-diameter")?.parentElement?.textContent,
     previewButtonCount: document.querySelectorAll("#preview-button").length,
     previewHeaderChildCount:
       document.querySelector(".viewer-panel .panel-heading")?.children.length,
@@ -148,6 +156,8 @@ try {
     !pageContent.guideText?.includes("Capture the four M3 nuts") ||
     !pageContent.fitLabel?.includes("Part-fit clearance") ||
     !pageContent.fitHelp?.includes("rail sockets") ||
+    !pageContent.spoolBoreLabel?.includes("center hole") ||
+    !pageContent.spoolBoreHelp?.includes("upper inside edge") ||
     pageContent.previewButtonCount !== 0 ||
     pageContent.previewHeaderChildCount !== 1 ||
     !pageContent.completeButtonText?.includes("Download all parts") ||
@@ -159,6 +169,43 @@ try {
   ) {
     throw new Error(`Page UX is incomplete: ${JSON.stringify(pageContent)}`);
   }
+
+  await page.evaluate(() => {
+    const input = document.querySelector("#spool-bore-diameter");
+    input.value = "65";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await page.waitForFunction(
+    () =>
+      document.querySelector("#viewer")?.dataset.previewState === "ready" &&
+      window.__spoolCustomizer.getPreviewState()?.spoolBoreDiameter === 65,
+    { timeout: previewTimeoutMs },
+  );
+  const boreUpdate = await page.evaluate(() => ({
+    state: window.__spoolCustomizer.getState(),
+    output: document.querySelector("#spool-bore-diameter-output")?.textContent,
+    axleHeight: document.querySelector("#axle-height")?.textContent,
+  }));
+  if (
+    boreUpdate.state.spoolBoreDiameter !== 65 ||
+    boreUpdate.output?.trim() !== "65 mm" ||
+    boreUpdate.axleHeight?.trim() !== "145.5 mm"
+  ) {
+    throw new Error(
+      `Spool bore did not update geometry: ${JSON.stringify(boreUpdate)}`,
+    );
+  }
+  await page.evaluate(() => {
+    const input = document.querySelector("#spool-bore-diameter");
+    input.value = "60";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await page.waitForFunction(
+    () =>
+      document.querySelector("#viewer")?.dataset.previewState === "ready" &&
+      window.__spoolCustomizer.getPreviewState()?.spoolBoreDiameter === 60,
+    { timeout: previewTimeoutMs },
+  );
 
   await page.select("#fit-preset", "loose");
   const extraClearance = await page.evaluate(() => ({

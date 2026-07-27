@@ -38,6 +38,7 @@ check: stls
 	@for file in $(STLS); do \
 		test -s "$$file"; \
 	done
+	python3 scripts/check-default-geometry.py $(BUILD_DIR)/side_frame.stl
 
 release:
 	./scripts/build-release.sh "$${VERSION:-unreleased}"

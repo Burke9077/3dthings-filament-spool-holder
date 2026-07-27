@@ -14,9 +14,10 @@ ties.
 
 Use the hosted customizer at
 [burke9077.github.io/3dthings-filament-spool-holder](https://burke9077.github.io/3dthings-filament-spool-holder/).
-Set the spool diameter and clear width, choose one to four linked holders, then
-download the complete print-pack ZIP. Advanced controls expose print-bed size,
-axle diameter, M3 nut dimensions, and fit clearances.
+Set the spool outside diameter, center-hole diameter, and clear width; choose
+one to four linked holders; then download the complete print-pack ZIP.
+Advanced controls expose print-bed size, axle diameter, M3 nut dimensions, and
+fit clearances.
 
 The live 3D assembly rebuilds automatically after settings change. The
 part-fit clearance preset changes only mating tolerances—rail sockets, nut
@@ -25,8 +26,9 @@ infill, or strength.
 
 Optional downloads for the nut-fit test, one holder module, link clips, and
 individual replacement parts are kept under a secondary menu. Each ZIP carries
-copy counts in its filenames and manifest, and the on-page guide covers print
-orientation and assembly.
+the outside diameter, maximum bore, clear width, and copy counts in its
+filenames and manifest, and the on-page guide covers print orientation and
+assembly.
 
 The customizer runs the official OpenSCAD WebAssembly build entirely in the
 browser. Dimensions and generated geometry stay on the device; there is no
@@ -34,8 +36,8 @@ model-generation server.
 
 ## Features
 
-- Parameterized spool diameter, clear width, base depth, frame, axle, fit, and
-  M3 hardware dimensions
+- Parameterized spool outside diameter, center-hole diameter, clear width,
+  base depth, frame, axle, fit, and M3 hardware dimensions
 - Two identical side frames and two identical crossrails
 - Shouldered rail tenons that seat in blind inside-face frame sockets
 - Drop-in M3 hex-nut traps that become captive inside those sockets
@@ -46,9 +48,24 @@ model-generation server.
 - Automatically updating browser-side 3D preview
 - OpenSCAD Customizer support and command-line STL export
 
-The defaults provide 125 mm between the side frames and clearance for a 220 mm
-diameter spool. A 200 mm × 70 mm example spool is shown only in the assembly
-preview.
+The defaults provide 125 mm between the side frames and 12 mm of floor
+clearance for a spool up to 220 mm outside diameter with a center hole up to
+60 mm. The assembly preview shows that maximum envelope hanging from the
+axle, just as the physical spool does.
+
+Both diameters matter. The axle supports the upper inside edge of the spool
+hole, so the spool center hangs below the axle by half the difference between
+the hole and axle diameters. The design therefore uses:
+
+```text
+axle height = outside diameter / 2
+            + (center-hole diameter - axle diameter) / 2
+            + floor clearance
+```
+
+Enter the largest outside diameter and largest center hole among the spools
+you intend to use. Every spool hole must also be larger than the selected
+axle diameter.
 
 ## Bill of materials
 
@@ -131,8 +148,9 @@ upward.
    add the second frame with its recesses facing inward.
 4. Install the four M3 screws through the small holes on the outside faces.
    Square the holder on a flat surface and tighten them evenly.
-5. Slide the axle through the spool, lower it into the open cradles, and press
-   a cap onto each end.
+5. Slide the axle through the spool and lower it into the open cradles. Confirm
+   that the axle bears on the upper inside edge of the spool hole while the
+   spool clears the floor, then press a cap onto each end.
 
 The blind side-frame sockets cover the nut openings after assembly, so the nuts
 cannot escape or turn. The rail shoulders bear against the inside frame faces;
@@ -165,7 +183,8 @@ neighbor.
 
 | Parameter | Default | Purpose |
 | --- | ---: | --- |
-| `spool_max_diameter` | 220 mm | Sets axle height with floor clearance |
+| `spool_max_diameter` | 220 mm | Largest supported spool outside diameter |
+| `spool_max_bore_diameter` | 60 mm | Largest supported spool center hole; contributes to axle height |
 | `inside_width` | 125 mm | Clear distance between side frames |
 | `base_depth` | 175 mm | Front-to-back footprint |
 | `spool_floor_clearance` | 12 mm | Clearance under the largest spool |
@@ -180,9 +199,11 @@ neighbor.
 | `link_fit_clearance` | 0.15 mm | Per-side clearance around linked frames |
 | `holder_count` | 2 | Complete modules shown in `linked_assembly` |
 
-Changing the spool envelope automatically updates the axle height and overall
-rail/axle lengths. OpenSCAD assertions reject combinations that would cut rail
-sockets through the frame or leave too little material around the axle.
+Changing the outside diameter or center hole automatically updates the axle
+height; changing the clear width updates the rail and axle lengths. OpenSCAD
+assertions reject combinations that would cut rail sockets through the frame,
+leave too little material around the axle, or make the spool hole incompatible
+with the axle.
 
 ## License
 

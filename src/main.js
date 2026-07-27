@@ -5,6 +5,7 @@ import {
   PARTS,
   SIZE_PRESETS,
   applyFitPreset,
+  geometrySlug,
   normalizeState,
   openScadDefinitions,
   printGroupFor,
@@ -162,12 +163,14 @@ function render() {
 
   document.querySelector("#spool-diameter-output").textContent =
     formatMillimeters(dimensions.spoolDiameter);
+  document.querySelector("#spool-bore-diameter-output").textContent =
+    formatMillimeters(dimensions.spoolBoreDiameter);
   document.querySelector("#inside-width-output").textContent =
     formatMillimeters(dimensions.insideWidth);
   document.querySelector("#frame-print-size").textContent =
     `${Math.round(dimensions.baseDepth)} × ${Math.round(dimensions.holderHeight)} mm`;
-  document.querySelector("#holder-height").textContent =
-    formatMillimeters(dimensions.holderHeight);
+  document.querySelector("#axle-height").textContent =
+    formatMillimeters(dimensions.axleHeight);
   document.querySelector("#axle-length").textContent =
     formatMillimeters(dimensions.axleLength);
   document.querySelector("#linked-span").textContent =
@@ -403,7 +406,7 @@ function saveBlob(blob, filename) {
 
 function partFilename(part, quantity) {
   const quantitySuffix = quantity ? `-print-${quantity}` : "";
-  return `spool-holder-${state.spoolDiameter}d-${state.insideWidth}w-${part.replaceAll("_", "-")}${quantitySuffix}.stl`;
+  return `spool-holder-${geometrySlug(state)}-${part.replaceAll("_", "-")}${quantitySuffix}.stl`;
 }
 
 async function showInViewer(buffer) {
@@ -529,9 +532,11 @@ ${quantities}
 
 KEY DIMENSIONS
 Maximum spool diameter: ${dimensions.spoolDiameter} mm
+Maximum spool bore:     ${dimensions.spoolBoreDiameter} mm
 Clear width:            ${dimensions.insideWidth} mm
 Footprint depth:        ${dimensions.baseDepth} mm
-Holder height:          ${dimensions.holderHeight.toFixed(2)} mm
+Bed-envelope height:    ${dimensions.holderHeight.toFixed(2)} mm
+Axle center height:     ${dimensions.axleHeight.toFixed(2)} mm
 Axle length:            ${dimensions.axleLength.toFixed(2)} mm
 Linked frame gap:       ${dimensions.linkGap} mm
 
@@ -605,8 +610,7 @@ async function downloadBundle(groupId) {
       blob,
       [
         "spool-holder",
-        `${state.spoolDiameter}d`,
-        `${state.insideWidth}w`,
+        geometrySlug(state),
         `${state.holderCount}x`,
         group.id.replaceAll("_", "-"),
       ].join("-") + ".zip",

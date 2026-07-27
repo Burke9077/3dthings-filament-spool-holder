@@ -28,6 +28,9 @@ show_preview_spool = true;
 // Maximum supported spool outside diameter.
 spool_max_diameter = 220; // [120:1:300]
 
+// Largest center-hole diameter among the spools this frame must support.
+spool_max_bore_diameter = 60; // [20:1:120]
+
 // Clear distance between the two side frames.
 inside_width = 125; // [40:1:250]
 
@@ -145,14 +148,21 @@ m3_nut_clearance = 0.25; // [0.05:0.05:0.8]
 
 // [Preview spool]
 
-preview_spool_diameter = 200;
-preview_spool_width = 70;
-preview_spool_bore = 52;
+preview_spool_diameter = spool_max_diameter;
+preview_spool_width = min(70, inside_width - 4);
+preview_spool_bore = spool_max_bore_diameter;
 
 /* [Hidden] */
 
 epsilon = 0.02;
-axle_height = spool_max_diameter / 2 + spool_floor_clearance;
+spool_center_drop =
+    (spool_max_bore_diameter - axle_diameter) / 2;
+preview_spool_center_drop =
+    (preview_spool_bore - axle_diameter) / 2;
+axle_height =
+    spool_max_diameter / 2
+        + spool_center_drop
+        + spool_floor_clearance;
 axle_slot_radius = axle_diameter / 2 + axle_slot_clearance;
 frame_top = axle_height + axle_slot_radius + axle_slot_wall;
 rail_center_offset = base_depth / 2 - rail_inset;
@@ -184,6 +194,12 @@ nut_pocket_corner_diameter =
 
 assert(spool_max_diameter > axle_diameter,
        "spool_max_diameter must exceed axle_diameter");
+assert(spool_max_bore_diameter > axle_diameter,
+       "spool_max_bore_diameter must exceed axle_diameter");
+assert(spool_max_bore_diameter < spool_max_diameter - 8,
+       "Leave at least 4 mm of spool flange outside the center bore");
+assert(preview_spool_bore > axle_diameter,
+       "preview_spool_bore must exceed axle_diameter");
 assert(base_depth > 2 * (rail_inset + rail_depth / 2),
        "base_depth is too small for the selected rail placement");
 assert(rail_center_height - rail_height / 2 >= 3,
@@ -566,7 +582,8 @@ module holder_assembly() {
         }
 
         if (show_preview_spool)
-            preview_spool();
+            translate([0, 0, -preview_spool_center_drop])
+                preview_spool();
     }
 }
 

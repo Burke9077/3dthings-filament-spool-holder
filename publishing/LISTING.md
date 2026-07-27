@@ -7,7 +7,8 @@
 
 A compact, support-free filament spool holder with captive M3 nut pockets,
 independent axles, and optional clips for linking multiple holders. Customize
-the spool diameter, width, fit, and module count directly in a browser.
+the spool outside diameter, center-hole diameter, width, fit, and module count
+directly in a browser.
 
 ## Description
 
@@ -66,8 +67,9 @@ caps flange-down, and clips flat.
 3. Seat both rails in one side frame, then add the second frame with its
    shallow recesses facing inward.
 4. Install and evenly tighten four M3 screws on a flat surface.
-5. Pass the axle through the spool, lower it into the cradles, and add both
-   caps.
+5. Pass the axle through the spool and lower it into the cradles. Confirm the
+   axle bears on the upper inside edge of the center hole while the spool
+   clears the floor, then add both caps.
 6. For multiple holders, connect neighboring frames with one front and one
    rear link clip.
 
