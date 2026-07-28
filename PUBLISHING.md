@@ -30,9 +30,13 @@ For a build-only rehearsal:
 3. Run the workflow.
 4. Download and inspect the `spool-holder-release-unreleased` artifact.
 
-The artifact contains the default STLs, OpenSCAD source, renders, listing copy,
-manifest, checksums, and a complete ZIP. It is not a GitHub Release and does
-not upload anything to a model marketplace.
+The artifact contains the default 220 mm outside-diameter × 60 mm maximum-bore
+× 115 mm spool-width STLs (125 mm clear frame spacing), OpenSCAD source,
+renders, listing copy, manifest, checksums, and a complete two-holder ZIP.
+Geometry-coded filenames include spool width, base depth, and crossrail
+clearance so incompatible wall sets remain distinct; each STL filename also
+carries its default slicer copy count. It is not a GitHub Release and does not
+upload anything to a model marketplace.
 
 The same package can be built locally:
 
